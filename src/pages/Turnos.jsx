@@ -4,6 +4,8 @@ import { usePacientes } from '../hooks/usePacientes';
 import { useConfiguracion } from '../hooks/useConfiguracion';
 import { formatFechaCorta, formatFechaInput, ESTADOS_TURNO, generarSlots } from '../utils/fechas';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { turnoSchema } from '../validations/schemas';
 import dayjs from 'dayjs';
 
 const Badge = ({ estado }) => {
@@ -32,7 +34,9 @@ export default function Turnos() {
   const cambiarEstado = useCambiarEstado();
   const eliminarTurno = useEliminarTurno();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(turnoSchema),
+  });
 
   const onSubmit = async (data) => {
     try {
@@ -153,7 +157,7 @@ export default function Turnos() {
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Paciente</label>
                 <select
-                  {...register('paciente', { required: 'Seleccioná un paciente' })}
+                  {...register('paciente')}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
                   <option value="">Seleccionar...</option>
@@ -169,7 +173,7 @@ export default function Turnos() {
                   <input
                     type="date"
                     defaultValue={fecha}
-                    {...register('fecha', { required: 'La fecha es obligatoria' })}
+                    {...register('fecha')}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                   />
                   {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha.message}</p>}
@@ -177,7 +181,7 @@ export default function Turnos() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Hora</label>
                   <select
-                    {...register('hora', { required: 'La hora es obligatoria' })}
+                    {...register('hora')}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                   >
                     <option value="">Seleccionar...</option>
