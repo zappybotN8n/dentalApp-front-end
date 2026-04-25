@@ -4,6 +4,7 @@ import { usePaciente, useTurnosDePaciente, useAgregarHistorial } from '../hooks/
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { historialSchema } from '../validations/schemas';
+import { toast } from 'sonner';
 import { formatFechaCorta, ESTADOS_TURNO } from '../utils/fechas';
 
 const Badge = ({ estado }) => {
@@ -26,10 +27,11 @@ export default function PacienteDetalle() {
   const onSubmitHistorial = async (data) => {
     try {
       await agregarHistorial.mutateAsync({ id, data });
+      toast.success('Registro clínico guardado');
       reset();
       setModalHistorial(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al guardar');
+      toast.error(err.response?.data?.message || 'Error al guardar');
     }
   };
 

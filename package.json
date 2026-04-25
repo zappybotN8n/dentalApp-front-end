@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.2",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "dayjs": "^1.11.10",
@@ -15,8 +16,8 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.49.2",
     "react-router-dom": "^6.21.1",
-    "zod": "^3.22.4",
-    "@hookform/resolvers": "^3.3.2"
+    "sonner": "^2.0.7",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

@@ -6,6 +6,8 @@ import { formatFechaCorta, formatFechaInput, ESTADOS_TURNO, generarSlots } from 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { turnoSchema } from '../validations/schemas';
+import { toast } from 'sonner';
+import ModalConfirmacion from '../components/ui/ModalConfirmacion';
 import dayjs from 'dayjs';
 
 const Badge = ({ estado }) => {
@@ -17,6 +19,7 @@ export default function Turnos() {
   const [fecha, setFecha] = useState(formatFechaInput(new Date()));
   const [modalAbierto, setModalAbierto] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('');
+  const [turnoACancelar, setTurnoACancelar] = useState(null);
 
   const { data: turnos = [], isLoading } = useTurnos({ fecha, estado: filtroEstado || undefined });
   const { data: pacientesResp } = usePacientes({ limit: 100 });
@@ -41,10 +44,11 @@ export default function Turnos() {
   const onSubmit = async (data) => {
     try {
       await crearTurno.mutateAsync(data);
+      toast.success('Turno creado correctamente');
       reset();
       setModalAbierto(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al crear turno');
+      toast.error(err.response?.data?.message || 'Error al crear turno');
     }
   };
 
@@ -127,7 +131,7 @@ export default function Turnos() {
                       )}
                       {t.estado !== 'cancelado' && (
                         <button
-                          onClick={() => cambiarEstado.mutate({ id: t._id, estado: 'cancelado' })}
+                          onClick={() => setTurnoACancelar(t)}
                           className="text-xs text-red-500 hover:underline"
                         >Cancelar</button>
                       )}
@@ -139,6 +143,23 @@ export default function Turnos() {
           </table>
         )}
       </div>
+
+      {/* Modal confirmación cancelar turno */}
+      {turnoACancelar && (
+        <ModalConfirmacion
+          titulo="¿Cancelar turno?"
+          mensaje={`Se cancelará el turno de ${turnoACancelar.paciente?.nombre} ${turnoACancelar.paciente?.apellido} a las ${turnoACancelar.hora}. Esta acción no se puede deshacer.`}
+          labelConfirmar="Sí, cancelar turno"
+          cargando={cambiarEstado.isPending}
+          onConfirmar={() => {
+            cambiarEstado.mutate(
+              { id: turnoACancelar._id, estado: 'cancelado' },
+              { onSuccess: () => setTurnoACancelar(null) }
+            );
+          }}
+          onCancelar={() => setTurnoACancelar(null)}
+        />
+      )}
 
       {/* Modal nuevo turno */}
       {modalAbierto && (
