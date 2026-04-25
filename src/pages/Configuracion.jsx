@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useConfiguracion, useActualizarConfiguracion } from '../hooks/useConfiguracion';
 import { DIAS_SEMANA, generarSlots } from '../utils/fechas';
+import { toast } from 'sonner';
 
 const INTERVALOS = [
   { value: 15, label: '15 minutos' },
@@ -19,8 +20,6 @@ export default function Configuracion() {
   const [horarioFin, setHorarioFin] = useState('18:00');
   const [intervalo, setIntervalo] = useState(30);
   const [duracionDefault, setDuracionDefault] = useState(30);
-  const [guardado, setGuardado] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (config) {
@@ -39,21 +38,19 @@ export default function Configuracion() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     if (horarioInicio >= horarioFin) {
-      setError('El horario de inicio debe ser anterior al de fin.');
+      toast.error('El horario de inicio debe ser anterior al de fin.');
       return;
     }
     if (diasAtencion.length === 0) {
-      setError('Seleccioná al menos un día de atención.');
+      toast.error('Seleccioná al menos un día de atención.');
       return;
     }
     try {
       await actualizar.mutateAsync({ diasAtencion, horarioInicio, horarioFin, intervalo, duracionDefault });
-      setGuardado(true);
-      setTimeout(() => setGuardado(false), 3000);
+      toast.success('Configuración guardada correctamente');
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al guardar la configuración.');
+      toast.error(err.response?.data?.message || 'Error al guardar la configuración.');
     }
   };
 
@@ -166,16 +163,6 @@ export default function Configuracion() {
               ))}
             </div>
           </div>
-        )}
-
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</p>
-        )}
-
-        {guardado && (
-          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
-            Configuración guardada correctamente.
-          </p>
         )}
 
         <button

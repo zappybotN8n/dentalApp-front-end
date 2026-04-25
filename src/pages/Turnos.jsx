@@ -6,6 +6,7 @@ import { formatFechaCorta, formatFechaInput, ESTADOS_TURNO, generarSlots } from 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { turnoSchema } from '../validations/schemas';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 
 const Badge = ({ estado }) => {
@@ -41,10 +42,11 @@ export default function Turnos() {
   const onSubmit = async (data) => {
     try {
       await crearTurno.mutateAsync(data);
+      toast.success('Turno creado correctamente');
       reset();
       setModalAbierto(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al crear turno');
+      toast.error(err.response?.data?.message || 'Error al crear turno');
     }
   };
 

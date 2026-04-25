@@ -4,6 +4,7 @@ import { usePacientes, useCrearPaciente } from '../hooks/usePacientes';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pacienteSchema } from '../validations/schemas';
+import { toast } from 'sonner';
 
 export default function Pacientes() {
   const [search, setSearch] = useState('');
@@ -22,10 +23,11 @@ export default function Pacientes() {
   const onSubmit = async (formData) => {
     try {
       await crearPaciente.mutateAsync(formData);
+      toast.success('Paciente creado correctamente');
       reset();
       setModalAbierto(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al crear paciente');
+      toast.error(err.response?.data?.message || 'Error al crear paciente');
     }
   };
 
