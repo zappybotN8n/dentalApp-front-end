@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePaciente, useTurnosDePaciente, useAgregarHistorial } from '../hooks/usePacientes';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { historialSchema } from '../validations/schemas';
 import { formatFechaCorta, ESTADOS_TURNO } from '../utils/fechas';
 
 const Badge = ({ estado }) => {
@@ -17,7 +19,9 @@ export default function PacienteDetalle() {
   const { data: paciente, isLoading } = usePaciente(id);
   const { data: turnos = [] } = useTurnosDePaciente(id);
   const agregarHistorial = useAgregarHistorial();
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(historialSchema),
+  });
 
   const onSubmitHistorial = async (data) => {
     try {
@@ -160,7 +164,8 @@ export default function PacienteDetalle() {
             <form onSubmit={handleSubmit(onSubmitHistorial)} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Tratamiento *</label>
-                <input type="text" placeholder="Ej: Limpieza, Extracción, Ortodoncia" {...register('tratamiento', { required: true })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                <input type="text" placeholder="Ej: Limpieza, Extracción, Ortodoncia" {...register('tratamiento')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                {errors.tratamiento && <p className="text-red-500 text-xs mt-1">{errors.tratamiento.message}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
@@ -170,6 +175,7 @@ export default function PacienteDetalle() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Costo ($)</label>
                   <input type="number" min={0} step={100} {...register('costo')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                  {errors.costo && <p className="text-red-500 text-xs mt-1">{errors.costo.message}</p>}
                 </div>
                 <div className="flex items-end pb-2">
                   <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">

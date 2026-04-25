@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePacientes, useCrearPaciente } from '../hooks/usePacientes';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { pacienteSchema } from '../validations/schemas';
 
 export default function Pacientes() {
   const [search, setSearch] = useState('');
@@ -13,7 +15,9 @@ export default function Pacientes() {
   const pagination = data?.pagination;
 
   const crearPaciente = useCrearPaciente();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(pacienteSchema),
+  });
 
   const onSubmit = async (formData) => {
     try {
@@ -80,15 +84,15 @@ export default function Pacientes() {
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label><input type="text" {...register('nombre', { required: 'Obligatorio' })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}</div>
-                <div><label className="block text-xs font-medium text-gray-600 mb-1">Apellido *</label><input type="text" {...register('apellido', { required: 'Obligatorio' })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.apellido && <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>}</div>
+                <div><label className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label><input type="text" {...register('nombre')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}</div>
+                <div><label className="block text-xs font-medium text-gray-600 mb-1">Apellido *</label><input type="text" {...register('apellido')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.apellido && <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs font-medium text-gray-600 mb-1">DNI</label><input type="text" {...register('dni')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" /></div>
-                <div><label className="block text-xs font-medium text-gray-600 mb-1">Teléfono * <span className="text-gray-400 font-normal">(ej: 5493815551234)</span></label><input type="text" {...register('telefono', { required: 'Obligatorio' })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}</div>
+                <div><label className="block text-xs font-medium text-gray-600 mb-1">DNI</label><input type="text" {...register('dni')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.dni && <p className="text-red-500 text-xs mt-1">{errors.dni.message}</p>}</div>
+                <div><label className="block text-xs font-medium text-gray-600 mb-1">Teléfono * <span className="text-gray-400 font-normal">(ej: 5493815551234)</span></label><input type="text" {...register('telefono')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs font-medium text-gray-600 mb-1">Email</label><input type="email" {...register('email')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" /></div>
+                <div><label className="block text-xs font-medium text-gray-600 mb-1">Email</label><input type="email" {...register('email')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />{errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}</div>
                 <div><label className="block text-xs font-medium text-gray-600 mb-1">Fecha de nacimiento</label><input type="date" {...register('fechaNacimiento')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
