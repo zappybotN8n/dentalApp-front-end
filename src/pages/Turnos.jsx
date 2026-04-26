@@ -19,9 +19,19 @@ export default function Turnos() {
   const [fecha, setFecha] = useState(formatFechaInput(new Date()));
   const [modalAbierto, setModalAbierto] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
   const [turnoACancelar, setTurnoACancelar] = useState(null);
 
-  const { data: turnos = [], isLoading } = useTurnos({ fecha, estado: filtroEstado || undefined });
+  const { data: turnosResp, isLoading } = useTurnos({
+    fecha,
+    estado: filtroEstado || undefined,
+    busqueda: busqueda || undefined,
+    page,
+    limit: 20,
+  });
+  const turnos = turnosResp?.data ?? [];
+  const pagination = turnosResp?.pagination;
   const { data: pacientesResp } = usePacientes({ limit: 100 });
   const { data: config } = useConfiguracion();
   const pacientes = pacientesResp?.data || [];
@@ -66,16 +76,16 @@ export default function Turnos() {
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-3 mb-5">
+      <div className="flex flex-wrap gap-3 mb-5">
         <input
           type="date"
           value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
+          onChange={(e) => { setFecha(e.target.value); setPage(1); }}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
         />
         <select
           value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
+          onChange={(e) => { setFiltroEstado(e.target.value); setPage(1); }}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
         >
           <option value="">Todos los estados</option>
@@ -83,6 +93,13 @@ export default function Turnos() {
             <option key={val} value={val}>{label}</option>
           ))}
         </select>
+        <input
+          type="text"
+          placeholder="Buscar paciente..."
+          value={busqueda}
+          onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-[200px]"
+        />
       </div>
 
       {/* Tabla */}
@@ -143,6 +160,26 @@ export default function Turnos() {
           </table>
         )}
       </div>
+
+      {/* Paginación */}
+      {pagination && pagination.pages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-xs text-gray-500">{pagination.total} turno{pagination.total !== 1 ? 's' : ''}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="text-xs px-3 py-1 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+            >← Anterior</button>
+            <span className="text-xs text-gray-500 px-2 py-1">{page} / {pagination.pages}</span>
+            <button
+              onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
+              disabled={page === pagination.pages}
+              className="text-xs px-3 py-1 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+            >Siguiente →</button>
+          </div>
+        </div>
+      )}
 
       {/* Modal confirmación cancelar turno */}
       {turnoACancelar && (
