@@ -47,7 +47,8 @@ export default function Pacientes() {
           <div className="p-8 text-center text-gray-400 text-sm">{search ? `Sin resultados para "${search}"` : 'No hay pacientes registrados'}</div>
         ) : (
           <>
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="min-w-full">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>{['Nombre','DNI','Teléfono','Obra social',''].map(h => <th key={h} className="text-left text-xs font-medium text-gray-500 px-4 py-3">{h}</th>)}</tr>
               </thead>
@@ -63,6 +64,7 @@ export default function Pacientes() {
                 ))}
               </tbody>
             </table>
+            </div>
             {pagination && pagination.pages > 1 && (
               <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
                 <p className="text-xs text-gray-500">{pagination.total} paciente{pagination.total !== 1 ? 's' : ''}</p>

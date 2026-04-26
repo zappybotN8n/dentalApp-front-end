@@ -7,8 +7,12 @@ export const useTurnosHoy = () =>
 export const useTurnosSemana = () =>
   useQuery({ queryKey: ['turnos', 'semana'], queryFn: () => turnosAPI.getSemana().then(r => r.data.data) });
 
+// Devuelve { data: turnos[], pagination: { total, page, limit, pages } }
 export const useTurnos = (params) =>
-  useQuery({ queryKey: ['turnos', params], queryFn: () => turnosAPI.getAll(params).then(r => r.data.data) });
+  useQuery({
+    queryKey: ['turnos', params],
+    queryFn: () => turnosAPI.getAll(params).then(r => r.data)
+  });
 
 export const useTurno = (id) =>
   useQuery({ queryKey: ['turnos', id], queryFn: () => turnosAPI.getById(id).then(r => r.data.data), enabled: !!id });

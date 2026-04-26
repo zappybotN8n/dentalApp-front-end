@@ -9,6 +9,7 @@ import Pacientes from './pages/Pacientes';
 import PacienteDetalle from './pages/PacienteDetalle';
 import Layout from './components/ui/Layout';
 import Configuracion from './pages/Configuracion';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 60, retry: 1 } }
@@ -22,6 +23,7 @@ const PrivateRoute = ({ children }) => {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Toaster position="top-right" richColors closeButton />
@@ -41,5 +43,6 @@ export default function App() {
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
