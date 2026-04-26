@@ -111,7 +111,8 @@ export default function Turnos() {
             No hay turnos para {formatFechaCorta(fecha)}
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 {['Hora', 'Paciente', 'Motivo', 'Duración', 'Estado', 'Acciones'].map(h => (
@@ -158,6 +159,7 @@ export default function Turnos() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
