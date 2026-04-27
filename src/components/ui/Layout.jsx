@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const navItems = [
+const navItemsBase = [
   { to: '/dashboard', label: 'Agenda', icon: '📅' },
   { to: '/turnos', label: 'Turnos', icon: '🕐' },
   { to: '/pacientes', label: 'Pacientes', icon: '👥' },
@@ -13,6 +13,10 @@ export default function Layout() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
+
+  const navItems = usuario?.rol === 'superadmin'
+    ? [...navItemsBase, { to: '/usuarios', label: 'Usuarios', icon: '👤' }]
+    : navItemsBase;
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const cerrarSidebar = () => setSidebarAbierto(false);
@@ -40,6 +44,11 @@ export default function Layout() {
           <div>
             <h1 className="text-lg font-semibold text-blue-700">🦷 DentalApp</h1>
             <p className="text-xs text-gray-500 mt-0.5">{usuario?.nombre}</p>
+            {usuario?.rol === 'superadmin' && (
+              <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                Superadmin
+              </span>
+            )}
           </div>
           {/* Botón cerrar sidebar en mobile */}
           <button

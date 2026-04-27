@@ -28,7 +28,16 @@ api.interceptors.response.use(
 // ── Auth ──────────────────────────────────────────────
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
-  getMe: () => api.get('/auth/me')
+  registro: (data) => api.post('/auth/registro', data),
+  getMe: () => api.get('/auth/me'),
+};
+
+// ── Usuarios (superadmin) ─────────────────────────────
+export const usuariosAPI = {
+  getAll: (params) => api.get('/usuarios', { params }),
+  cambiarEstado: (id, estado) => api.put(`/usuarios/${id}/estado`, { estado }),
+  cambiarRol: (id, rol) => api.put(`/usuarios/${id}/rol`, { rol }),
+  eliminar: (id) => api.delete(`/usuarios/${id}`),
 };
 
 // ── Turnos ────────────────────────────────────────────

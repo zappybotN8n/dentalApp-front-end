@@ -3,12 +3,14 @@ import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
+import Registro from './pages/Registro';
 import Dashboard from './pages/Dashboard';
 import Turnos from './pages/Turnos';
 import Pacientes from './pages/Pacientes';
 import PacienteDetalle from './pages/PacienteDetalle';
 import Layout from './components/ui/Layout';
 import Configuracion from './pages/Configuracion';
+import Usuarios from './pages/Usuarios';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 
 const queryClient = new QueryClient({
@@ -21,6 +23,14 @@ const PrivateRoute = ({ children }) => {
   return estaAutenticado ? children : <Navigate to="/login" replace />;
 };
 
+const SuperAdminRoute = ({ children }) => {
+  const { usuario, cargando } = useAuth();
+  if (cargando) return <div className="flex items-center justify-center h-screen text-gray-500">Cargando...</div>;
+  if (!usuario) return <Navigate to="/login" replace />;
+  if (usuario.rol !== 'superadmin') return <Navigate to="/dashboard" replace />;
+  return children;
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -30,6 +40,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/registro" element={<Registro />} />
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
@@ -37,6 +48,7 @@ export default function App() {
               <Route path="pacientes" element={<Pacientes />} />
               <Route path="pacientes/:id" element={<PacienteDetalle />} />
               <Route path="configuracion" element={<Configuracion />} />
+              <Route path="usuarios" element={<SuperAdminRoute><Usuarios /></SuperAdminRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
