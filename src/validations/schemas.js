@@ -36,3 +36,14 @@ export const historialSchema = z.object({
   costo: z.coerce.number().min(0, 'El costo no puede ser negativo').optional(),
   pagado: z.boolean().optional(),
 });
+
+export const registroSchema = z.object({
+  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirmarPassword: z.string(),
+  rol: z.enum(['admin', 'dentista', 'recepcion'], { errorMap: () => ({ message: 'Seleccioná un rol' }) }),
+}).refine((d) => d.password === d.confirmarPassword, {
+  message: 'Las contraseñas no coinciden',
+  path: ['confirmarPassword'],
+});
