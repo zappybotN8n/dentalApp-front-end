@@ -47,13 +47,13 @@ export default function PacienteDetalle() {
 
       {/* Header paciente */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">{paciente.apellido}, {paciente.nombre}</h2>
-            <div className="flex gap-4 mt-2 text-sm text-gray-500">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold text-gray-800 break-words">{paciente.apellido}, {paciente.nombre}</h2>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
               {paciente.dni && <span>DNI: {paciente.dni}</span>}
               <span>Tel: {paciente.telefono}</span>
-              {paciente.email && <span>{paciente.email}</span>}
+              {paciente.email && <span className="break-all">{paciente.email}</span>}
             </div>
             {paciente.obraSocial && (
               <p className="mt-1 text-xs text-gray-400">
@@ -61,7 +61,7 @@ export default function PacienteDetalle() {
               </p>
             )}
           </div>
-          <div className="text-right text-xs text-gray-400">
+          <div className="text-right text-xs text-gray-400 shrink-0">
             <p>Paciente desde</p>
             <p className="font-medium text-gray-600">{formatFechaCorta(paciente.creadoEn)}</p>
           </div>
@@ -89,11 +89,11 @@ export default function PacienteDetalle() {
       {/* Tab: Historia clínica */}
       {tab === 'info' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-sm font-medium text-gray-700">Historia clínica ({historial.length} registros)</h3>
             <button
               onClick={() => setModalHistorial(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shrink-0"
             >
               + Agregar registro
             </button>
@@ -106,15 +106,15 @@ export default function PacienteDetalle() {
             <div className="space-y-3">
               {historial.map((h) => (
                 <div key={h._id} className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">{h.tratamiento}</p>
-                      {h.notas && <p className="text-xs text-gray-500 mt-1">{h.notas}</p>}
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 break-words">{h.tratamiento}</p>
+                      {h.notas && <p className="text-xs text-gray-500 mt-1 break-words">{h.notas}</p>}
                     </div>
-                    <div className="text-right ml-4">
+                    <div className="text-right shrink-0">
                       <p className="text-xs text-gray-400">{formatFechaCorta(h.fecha)}</p>
                       {h.costo > 0 && (
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 justify-end">
                           <span className="text-xs font-medium text-gray-700">${h.costo.toLocaleString('es-AR')}</span>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${h.pagado ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                             {h.pagado ? 'Pagado' : 'Pendiente'}
@@ -136,29 +136,31 @@ export default function PacienteDetalle() {
           {turnos.length === 0 ? (
             <div className="p-8 text-center text-gray-400 text-sm">Sin turnos registrados</div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>{['Fecha', 'Hora', 'Motivo', 'Estado'].map(h => <th key={h} className="text-left text-xs font-medium text-gray-500 px-4 py-3">{h}</th>)}</tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {turnos.map((t) => (
-                  <tr key={t._id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-600">{formatFechaCorta(t.fecha)}</td>
-                    <td className="px-4 py-3 text-sm font-mono text-gray-600">{t.hora}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{t.motivo || '—'}</td>
-                    <td className="px-4 py-3"><Badge estado={t.estado} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>{['Fecha', 'Hora', 'Motivo', 'Estado'].map(h => <th key={h} className="text-left text-xs font-medium text-gray-500 px-4 py-3">{h}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {turnos.map((t) => (
+                    <tr key={t._id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{formatFechaCorta(t.fecha)}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-gray-600 whitespace-nowrap">{t.hora}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{t.motivo || '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap"><Badge estado={t.estado} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       {/* Modal historial */}
       {modalHistorial && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold text-gray-800">Nuevo registro clínico</h3>
               <button onClick={() => setModalHistorial(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
