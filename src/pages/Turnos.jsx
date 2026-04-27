@@ -32,16 +32,34 @@ export default function Turnos() {
   });
   const turnos = turnosResp?.data ?? [];
   const pagination = turnosResp?.pagination;
+
+  // Query sin filtros para saber qué slots están ocupados en la fecha del modal
+  const { data: turnosFechaResp } = useTurnos({ fecha, limit: 100 });
+  const turnosFecha = turnosFechaResp?.data ?? [];
+
   const { data: pacientesResp } = usePacientes({ limit: 100 });
   const { data: config } = useConfiguracion();
   const pacientes = pacientesResp?.data || [];
 
-  const horarios = config
-    ? generarSlots(config.horarioInicio, config.horarioFin, config.intervalo)
-    : [];
-
-  const diaSeleccionado = dayjs(fecha).day(); // 0=Dom ... 6=Sáb
+  const diaSeleccionado = dayjs(fecha).day();
   const diaHabilitado = !config || config.diasAtencion.includes(diaSeleccionado);
+
+  // Slots ocupados: turnos activos (no cancelados) en esa fecha
+  const slotsBloqueados = new Set(
+    turnosFecha.filter(t => t.estado !== 'cancelado').map(t => t.hora)
+  );
+
+  // Si es hoy, no mostrar slots pasados
+  const esHoy = fecha === formatFechaInput(new Date());
+  const horaActual = dayjs().format('HH:mm');
+
+  const horarios = config
+    ? generarSlots(config.horarioInicio, config.horarioFin, config.intervalo).filter(slot => {
+        if (slotsBloqueados.has(slot)) return false;
+        if (esHoy && slot <= horaActual) return false;
+        return true;
+      })
+    : [];
 
   const crearTurno = useCrearTurno();
   const cambiarEstado = useCambiarEstado();
@@ -242,10 +260,16 @@ export default function Turnos() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Hora</label>
                   <select
                     {...register('hora')}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    disabled={horarios.length === 0}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-50 disabled:text-gray-400"
                   >
-                    <option value="">Seleccionar...</option>
-                    {horarios.map(h => <option key={h} value={h}>{h}</option>)}
+                    {horarios.length === 0
+                      ? <option value="">Sin horarios disponibles</option>
+                      : <>
+                          <option value="">Seleccionar...</option>
+                          {horarios.map(h => <option key={h} value={h}>{h}</option>)}
+                        </>
+                    }
                   </select>
                   {errors.hora && <p className="text-red-500 text-xs mt-1">{errors.hora.message}</p>}
                 </div>
