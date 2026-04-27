@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { turnoSchema } from '../validations/schemas';
 import { toast } from 'sonner';
 import ModalConfirmacion from '../components/ui/ModalConfirmacion';
+import CalendarioInput from '../components/ui/CalendarioInput';
 import dayjs from 'dayjs';
 
 const Badge = ({ estado }) => {
@@ -18,6 +19,7 @@ const Badge = ({ estado }) => {
 export default function Turnos() {
   const [fecha, setFecha] = useState(formatFechaInput(new Date()));
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [fechaModal, setFechaModal] = useState(formatFechaInput(new Date()));
   const [filtroEstado, setFiltroEstado] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
@@ -33,30 +35,24 @@ export default function Turnos() {
   const turnos = turnosResp?.data ?? [];
   const pagination = turnosResp?.pagination;
 
-  // Query sin filtros para saber qué slots están ocupados en la fecha del modal
-  const { data: turnosFechaResp } = useTurnos({ fecha, limit: 100 });
-  const turnosFecha = turnosFechaResp?.data ?? [];
+  // Slots ocupados para la fecha elegida en el modal
+  const { data: turnosFechaModalResp } = useTurnos({ fecha: fechaModal, limit: 100 });
+  const turnosFechaModal = turnosFechaModalResp?.data ?? [];
 
   const { data: pacientesResp } = usePacientes({ limit: 100 });
   const { data: config } = useConfiguracion();
   const pacientes = pacientesResp?.data || [];
 
-  const diaSeleccionado = dayjs(fecha).day();
-  const diaHabilitado = !config || config.diasAtencion.includes(diaSeleccionado);
-
-  // Slots ocupados: turnos activos (no cancelados) en esa fecha
+  // Slots disponibles para la fecha del modal
   const slotsBloqueados = new Set(
-    turnosFecha.filter(t => t.estado !== 'cancelado').map(t => t.hora)
+    turnosFechaModal.filter(t => t.estado !== 'cancelado').map(t => t.hora)
   );
-
-  // Si es hoy, no mostrar slots pasados
-  const esHoy = fecha === formatFechaInput(new Date());
+  const esHoyModal = fechaModal === formatFechaInput(new Date());
   const horaActual = dayjs().format('HH:mm');
-
   const horarios = config
     ? generarSlots(config.horarioInicio, config.horarioFin, config.intervalo).filter(slot => {
         if (slotsBloqueados.has(slot)) return false;
-        if (esHoy && slot <= horaActual) return false;
+        if (esHoyModal && slot <= horaActual) return false;
         return true;
       })
     : [];
@@ -65,16 +61,34 @@ export default function Turnos() {
   const cambiarEstado = useCambiarEstado();
   const eliminarTurno = useEliminarTurno();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(turnoSchema),
   });
+
+  const abrirModal = () => {
+    const hoy = formatFechaInput(new Date());
+    setFechaModal(hoy);
+    reset({ fecha: hoy, duracion: config?.duracionDefault ?? 30 });
+    setModalAbierto(true);
+  };
+
+  const cerrarModal = () => {
+    setModalAbierto(false);
+    reset();
+  };
+
+  const handleFechaModal = (nuevaFecha) => {
+    setFechaModal(nuevaFecha);
+    setValue('fecha', nuevaFecha, { shouldValidate: true });
+    // Limpiar hora al cambiar fecha para evitar seleccionar un slot de otro día
+    setValue('hora', '');
+  };
 
   const onSubmit = async (data) => {
     try {
       await crearTurno.mutateAsync(data);
       toast.success('Turno creado correctamente');
-      reset();
-      setModalAbierto(false);
+      cerrarModal();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al crear turno');
     }
@@ -86,7 +100,7 @@ export default function Turnos() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-800">Turnos</h2>
         <button
-          onClick={() => setModalAbierto(true)}
+          onClick={abrirModal}
           className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
         >
           + Nuevo turno
@@ -220,18 +234,18 @@ export default function Turnos() {
 
       {/* Modal nuevo turno */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold text-gray-800">Nuevo turno</h3>
-              <button onClick={() => setModalAbierto(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              <button onClick={cerrarModal} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
             </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {!diaHabilitado && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs rounded-lg px-3 py-2">
-                  El día seleccionado no es un día de atención configurado.
-                </div>
-              )}
+              {/* Campo fecha oculto para react-hook-form */}
+              <input type="hidden" {...register('fecha')} />
+
+              {/* Paciente */}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Paciente</label>
                 <select
@@ -245,35 +259,45 @@ export default function Turnos() {
                 </select>
                 {errors.paciente && <p className="text-red-500 text-xs mt-1">{errors.paciente.message}</p>}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Fecha</label>
-                  <input
-                    type="date"
-                    defaultValue={fecha}
-                    {...register('fecha')}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                  />
-                  {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Hora</label>
-                  <select
-                    {...register('hora')}
-                    disabled={horarios.length === 0}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    {horarios.length === 0
-                      ? <option value="">Sin horarios disponibles</option>
-                      : <>
-                          <option value="">Seleccionar...</option>
-                          {horarios.map(h => <option key={h} value={h}>{h}</option>)}
-                        </>
-                    }
-                  </select>
-                  {errors.hora && <p className="text-red-500 text-xs mt-1">{errors.hora.message}</p>}
-                </div>
+
+              {/* Calendario de fecha */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Fecha
+                  {config && (
+                    <span className="ml-1 font-normal text-gray-400">
+                      — días habilitados según tu configuración
+                    </span>
+                  )}
+                </label>
+                <CalendarioInput
+                  value={fechaModal}
+                  onChange={handleFechaModal}
+                  diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
+                />
+                {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha.message}</p>}
               </div>
+
+              {/* Hora */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Hora disponible</label>
+                <select
+                  {...register('hora')}
+                  disabled={horarios.length === 0}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  {horarios.length === 0
+                    ? <option value="">Sin horarios disponibles</option>
+                    : <>
+                        <option value="">Seleccionar...</option>
+                        {horarios.map(h => <option key={h} value={h}>{h}</option>)}
+                      </>
+                  }
+                </select>
+                {errors.hora && <p className="text-red-500 text-xs mt-1">{errors.hora.message}</p>}
+              </div>
+
+              {/* Motivo y duración */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Motivo</label>
@@ -296,6 +320,8 @@ export default function Turnos() {
                   />
                 </div>
               </div>
+
+              {/* Notas */}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
                 <textarea
@@ -304,10 +330,11 @@ export default function Turnos() {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
                 />
               </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setModalAbierto(false)}
+                  onClick={cerrarModal}
                   className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
