@@ -9,6 +9,7 @@ import Turnos from './pages/Turnos';
 import Pacientes from './pages/Pacientes';
 import PacienteDetalle from './pages/PacienteDetalle';
 import Layout from './components/ui/Layout';
+import LayoutSuperAdmin from './components/ui/LayoutSuperAdmin';
 import Configuracion from './pages/Configuracion';
 import Usuarios from './pages/Usuarios';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -17,15 +18,23 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 60, retry: 1 } }
 });
 
+const Cargando = () => (
+  <div className="flex items-center justify-center h-screen text-gray-500">Cargando...</div>
+);
+
+// Solo usuarios normales (no superadmin)
 const PrivateRoute = ({ children }) => {
-  const { estaAutenticado, cargando } = useAuth();
-  if (cargando) return <div className="flex items-center justify-center h-screen text-gray-500">Cargando...</div>;
-  return estaAutenticado ? children : <Navigate to="/login" replace />;
+  const { usuario, cargando } = useAuth();
+  if (cargando) return <Cargando />;
+  if (!usuario) return <Navigate to="/login" replace />;
+  if (usuario.rol === 'superadmin') return <Navigate to="/usuarios" replace />;
+  return children;
 };
 
+// Solo superadmin
 const SuperAdminRoute = ({ children }) => {
   const { usuario, cargando } = useAuth();
-  if (cargando) return <div className="flex items-center justify-center h-screen text-gray-500">Cargando...</div>;
+  if (cargando) return <Cargando />;
   if (!usuario) return <Navigate to="/login" replace />;
   if (usuario.rol !== 'superadmin') return <Navigate to="/dashboard" replace />;
   return children;
@@ -39,8 +48,16 @@ export default function App() {
         <Toaster position="top-right" richColors closeButton />
         <BrowserRouter>
           <Routes>
+            {/* Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro />} />
+
+            {/* Rutas superadmin — layout propio, solo gestión de usuarios */}
+            <Route path="/" element={<SuperAdminRoute><LayoutSuperAdmin /></SuperAdminRoute>}>
+              <Route path="usuarios" element={<Usuarios />} />
+            </Route>
+
+            {/* Rutas de consultorio — usuarios normales */}
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
@@ -48,8 +65,8 @@ export default function App() {
               <Route path="pacientes" element={<Pacientes />} />
               <Route path="pacientes/:id" element={<PacienteDetalle />} />
               <Route path="configuracion" element={<Configuracion />} />
-              <Route path="usuarios" element={<SuperAdminRoute><Usuarios /></SuperAdminRoute>} />
             </Route>
+
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
