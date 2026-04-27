@@ -12,9 +12,7 @@ const ESTADOS_BADGE = {
 };
 
 const ROLES_LABEL = {
-  admin: 'Administrador',
-  dentista: 'Dentista',
-  recepcion: 'Recepción',
+  usuario: 'Usuario',
   superadmin: 'Superadmin',
 };
 
@@ -42,15 +40,6 @@ export default function Usuarios() {
       toast.success('Estado actualizado');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Error al cambiar estado'),
-  });
-
-  const mutRol = useMutation({
-    mutationFn: ({ id, rol }) => usuariosAPI.cambiarRol(id, rol),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success('Rol actualizado');
-    },
-    onError: (err) => toast.error(err.response?.data?.message || 'Error al cambiar rol'),
   });
 
   const mutEliminar = useMutation({
@@ -126,7 +115,6 @@ export default function Usuarios() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registrado</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
@@ -134,13 +122,13 @@ export default function Usuarios() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-sm text-gray-400">
+                  <td colSpan={4} className="px-4 py-12 text-center text-sm text-gray-400">
                     Cargando usuarios...
                   </td>
                 </tr>
               ) : usuarios.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-sm text-gray-400">
+                  <td colSpan={4} className="px-4 py-12 text-center text-sm text-gray-400">
                     No hay usuarios que coincidan con los filtros
                   </td>
                 </tr>
@@ -155,19 +143,6 @@ export default function Usuarios() {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ESTADOS_BADGE[u.estado]}`}>
                         {u.estado.charAt(0).toUpperCase() + u.estado.slice(1)}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={u.rol}
-                        disabled={u.rol === 'superadmin' || mutRol.isPending}
-                        onChange={(e) => mutRol.mutate({ id: u._id, rol: e.target.value })}
-                        className="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="admin">Administrador</option>
-                        <option value="dentista">Dentista</option>
-                        <option value="recepcion">Recepción</option>
-                        {u.rol === 'superadmin' && <option value="superadmin">Superadmin</option>}
-                      </select>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {new Date(u.creadoEn).toLocaleDateString('es-AR')}

@@ -42,7 +42,6 @@ export const registroSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   confirmarPassword: z.string(),
-  rol: z.enum(['admin', 'dentista', 'recepcion'], { errorMap: () => ({ message: 'Seleccioná un rol' }) }),
 }).refine((d) => d.password === d.confirmarPassword, {
   message: 'Las contraseñas no coinciden',
   path: ['confirmarPassword'],

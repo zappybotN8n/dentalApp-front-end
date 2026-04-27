@@ -22,7 +22,6 @@ export default function Registro() {
         nombre: data.nombre,
         email: data.email,
         password: data.password,
-        rol: data.rol,
       });
       setEnviado(true);
     } catch (err) {
@@ -103,20 +102,6 @@ export default function Registro() {
             {errors.confirmarPassword && (
               <p className="text-xs text-red-600 mt-1">{errors.confirmarPassword.message}</p>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-            <select
-              {...register('rol')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Seleccioná un rol</option>
-              <option value="admin">Administrador</option>
-              <option value="dentista">Dentista</option>
-              <option value="recepcion">Recepción</option>
-            </select>
-            {errors.rol && <p className="text-xs text-red-600 mt-1">{errors.rol.message}</p>}
           </div>
 
           {errorServidor && (

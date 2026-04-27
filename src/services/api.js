@@ -69,4 +69,5 @@ export const configuracionAPI = {
   actualizar: (data) => api.put('/configuracion', data)
 };
 
+
 export default api;
