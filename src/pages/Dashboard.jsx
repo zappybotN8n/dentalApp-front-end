@@ -171,7 +171,7 @@ export default function Dashboard() {
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-3 gap-3">
-        {vista === 'semana' ? [
+        {(vista === 'semana' ? [
           { label: 'Turnos semana', value: totalSemana,    color: 'text-blue-600',   bg: 'bg-blue-50' },
           { label: 'Pendientes',    value: pendientesSem,  color: 'text-yellow-600', bg: 'bg-yellow-50' },
           { label: 'Completados',   value: completadosSem, color: 'text-green-600',  bg: 'bg-green-50' },
@@ -179,7 +179,7 @@ export default function Dashboard() {
           { label: 'Turnos hoy',  value: turnosDia.length, color: 'text-blue-600',   bg: 'bg-blue-50' },
           { label: 'Pendientes',  value: pendientesDia,    color: 'text-yellow-600', bg: 'bg-yellow-50' },
           { label: 'Completados', value: completadosDia,   color: 'text-green-600',  bg: 'bg-green-50' },
-        ].map(({ label, value, color, bg }) => (
+        ]).map(({ label, value, color, bg }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{label}</p>
