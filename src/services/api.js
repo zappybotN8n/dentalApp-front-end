@@ -49,7 +49,8 @@ export const turnosAPI = {
   crear: (data) => api.post('/turnos', data),
   actualizar: (id, data) => api.put(`/turnos/${id}`, data),
   cambiarEstado: (id, estado) => api.patch(`/turnos/${id}/estado`, { estado }),
-  eliminar: (id) => api.delete(`/turnos/${id}`)
+  eliminar: (id) => api.delete(`/turnos/${id}`),
+  exportarPDF: (fecha) => api.get('/turnos/exportar/pdf', { params: { fecha }, responseType: 'blob' }),
 };
 
 // ── Pacientes ─────────────────────────────────────────
