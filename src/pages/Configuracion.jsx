@@ -117,9 +117,7 @@ export default function Configuracion() {
       setHorarioFin(config.horarioFin);
       setIntervalo(config.intervalo);
       setDuracionDefault(config.duracionDefault);
-      setFechasBloqueadas(
-        (config.fechasBloqueadas || []).map(f => new Date(f).toISOString().slice(0, 10))
-      );
+      setFechasBloqueadas(config.fechasBloqueadas || []);
     }
   }, [config]);
 

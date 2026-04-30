@@ -17,9 +17,7 @@ export default function CalendarioInput({ value, onChange, diasHabilitados = [0,
   for (let i = 0; i < offsetInicio; i++) celdas.push(null);
   for (let d = 1; d <= totalDias; d++) celdas.push(inicioMes.date(d));
 
-  const bloqueadasSet = new Set(
-    fechasBloqueadas.map(f => new Date(f).toISOString().slice(0, 10))
-  );
+  const bloqueadasSet = new Set(fechasBloqueadas);
 
   const esBloqueado = (dia) =>
     dia.isBefore(hoy) ||
