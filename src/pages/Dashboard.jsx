@@ -1,100 +1,171 @@
-import { useState, useMemo } from 'react';
-import { useQueries } from '@tanstack/react-query';
-import dayjs from 'dayjs';
-import 'dayjs/locale/es';
-import { turnosAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { useCambiarEstado } from '../hooks/useTurnos';
-import { usePacientesStats, useCumpleanos } from '../hooks/usePacientes';
-import { ESTADOS_TURNO } from '../utils/fechas';
-import { toast } from 'sonner';
+import { useState, useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
+import { turnosAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import { useCambiarEstado } from "../hooks/useTurnos";
+import { usePacientesStats, useCumpleanos } from "../hooks/usePacientes";
+import { ESTADOS_TURNO } from "../utils/fechas";
+import { toast } from "sonner";
 
-dayjs.locale('es');
+dayjs.locale("es");
 
 const getLunes = (date) => {
   const d = dayjs(date);
   const day = d.day();
   const diff = day === 0 ? -6 : 1 - day;
-  return d.add(diff, 'day').startOf('day');
+  return d.add(diff, "day").startOf("day");
 };
 
 const Badge = ({ estado }) => {
   const { label, color } = ESTADOS_TURNO[estado] || {};
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>;
+  return (
+    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>
+      {label}
+    </span>
+  );
 };
 
 const ACCIONES = {
-  pendiente:  [{ label: 'Confirmar', next: 'confirmado', cls: 'text-blue-600 hover:text-blue-700' }],
-  confirmado: [{ label: 'Completar', next: 'completado', cls: 'text-green-600 hover:text-green-700' }],
+  pendiente: [
+    {
+      label: "Confirmar",
+      next: "confirmado",
+      cls: "text-blue-600 hover:text-blue-700",
+    },
+  ],
+  confirmado: [
+    {
+      label: "Completar",
+      next: "completado",
+      cls: "text-green-600 hover:text-green-700",
+    },
+  ],
 };
 
 const ACCIONES_FULL = {
-  pendiente:  [
-    { label: 'Confirmar', next: 'confirmado', cls: 'bg-blue-50 text-blue-700 hover:bg-blue-100' },
-    { label: 'Ausente',   next: 'ausente',    cls: 'bg-gray-50 text-gray-600 hover:bg-gray-100' },
-    { label: 'Cancelar',  next: 'cancelado',  cls: 'bg-red-50 text-red-600 hover:bg-red-100' },
+  pendiente: [
+    {
+      label: "Confirmar",
+      next: "confirmado",
+      cls: "bg-blue-50 text-blue-700 hover:bg-blue-100",
+    },
+    {
+      label: "Ausente",
+      next: "ausente",
+      cls: "bg-gray-50 text-gray-600 hover:bg-gray-100",
+    },
+    {
+      label: "Cancelar",
+      next: "cancelado",
+      cls: "bg-red-50 text-red-600 hover:bg-red-100",
+    },
   ],
   confirmado: [
-    { label: 'Completar', next: 'completado', cls: 'bg-green-50 text-green-700 hover:bg-green-100' },
-    { label: 'Ausente',   next: 'ausente',    cls: 'bg-gray-50 text-gray-600 hover:bg-gray-100' },
-    { label: 'Cancelar',  next: 'cancelado',  cls: 'bg-red-50 text-red-600 hover:bg-red-100' },
+    {
+      label: "Completar",
+      next: "completado",
+      cls: "bg-green-50 text-green-700 hover:bg-green-100",
+    },
+    {
+      label: "Ausente",
+      next: "ausente",
+      cls: "bg-gray-50 text-gray-600 hover:bg-gray-100",
+    },
+    {
+      label: "Cancelar",
+      next: "cancelado",
+      cls: "bg-red-50 text-red-600 hover:bg-red-100",
+    },
   ],
 };
 
 export default function Dashboard() {
   const { usuario } = useAuth();
-  const [vista, setVista] = useState('semana');
+  const [vista, setVista] = useState("semana");
   const [semanaBase, setSemanaBase] = useState(() => getLunes(dayjs()));
-  const [diaSeleccionado, setDiaSeleccionado] = useState(() => dayjs().startOf('day'));
-  const cambiarEstado  = useCambiarEstado();
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() =>
+    dayjs().startOf("day"),
+  );
+  const cambiarEstado = useCambiarEstado();
   const { data: stats } = usePacientesStats();
-  const { data: cumpleanos = [] } = useCumpleanos('semana');
+  const { data: cumpleanos = [] } = useCumpleanos("semana");
 
-  const hoy = dayjs().startOf('day');
+  const hoy = dayjs().startOf("day");
 
   const diasSemana = useMemo(
-    () => Array.from({ length: 6 }, (_, i) => semanaBase.add(i, 'day')),
-    [semanaBase]
+    () => Array.from({ length: 6 }, (_, i) => semanaBase.add(i, "day")),
+    [semanaBase],
   );
 
   const queries = useQueries({
-    queries: diasSemana.map(dia => ({
-      queryKey: ['turnos', usuario?._id, { fecha: dia.format('YYYY-MM-DD') }],
-      queryFn: () => turnosAPI.getAll({ fecha: dia.format('YYYY-MM-DD'), limit: 50 }).then(r => r.data.data || []),
+    queries: diasSemana.map((dia) => ({
+      queryKey: ["turnos", usuario?._id, { fecha: dia.format("YYYY-MM-DD") }],
+      queryFn: () =>
+        turnosAPI
+          .getAll({ fecha: dia.format("YYYY-MM-DD"), limit: 50 })
+          .then((r) => r.data.data || []),
       enabled: !!usuario,
       staleTime: 1000 * 60 * 2,
-    }))
+    })),
   });
 
   const turnosPorDia = diasSemana.map((dia, i) => ({
     dia,
-    turnos: (queries[i].data || []).sort((a, b) => a.hora.localeCompare(b.hora)),
+    turnos: (queries[i].data || []).sort((a, b) =>
+      a.hora.localeCompare(b.hora),
+    ),
     loading: queries[i].isLoading,
   }));
 
-  const diaActualData = turnosPorDia.find(d => d.dia.isSame(diaSeleccionado, 'day'));
+  const diaActualData = turnosPorDia.find((d) =>
+    d.dia.isSame(diaSeleccionado, "day"),
+  );
   const turnosDia = diaActualData?.turnos || [];
 
-  const totalSemana    = turnosPorDia.reduce((acc, d) => acc + d.turnos.length, 0);
-  const pendientesSem  = turnosPorDia.reduce((acc, d) => acc + d.turnos.filter(t => ['pendiente','confirmado'].includes(t.estado)).length, 0);
-  const completadosSem = turnosPorDia.reduce((acc, d) => acc + d.turnos.filter(t => t.estado === 'completado').length, 0);
+  // --- Lógica de contadores actualizada ---
+  const totalSemana = turnosPorDia.reduce((acc, d) => acc + d.turnos.length, 0);
+  const pendientesSem = turnosPorDia.reduce(
+    (acc, d) =>
+      acc +
+      d.turnos.filter((t) => ["pendiente", "confirmado"].includes(t.estado))
+        .length,
+    0,
+  );
+  const completadosSem = turnosPorDia.reduce(
+    (acc, d) => acc + d.turnos.filter((t) => t.estado === "completado").length,
+    0,
+  );
+  const ausentesSem = turnosPorDia.reduce(
+    (acc, d) => acc + d.turnos.filter((t) => t.estado === "ausente").length,
+    0,
+  );
 
-  const pendientesDia  = turnosDia.filter(t => ['pendiente','confirmado'].includes(t.estado)).length;
-  const completadosDia = turnosDia.filter(t => t.estado === 'completado').length;
+  const pendientesDia = turnosDia.filter((t) =>
+    ["pendiente", "confirmado"].includes(t.estado),
+  ).length;
+  const completadosDia = turnosDia.filter(
+    (t) => t.estado === "completado",
+  ).length;
+  const ausentesDia = turnosDia.filter((t) => t.estado === "ausente").length;
 
   const handleEstado = (id, estado) => {
-    cambiarEstado.mutate({ id, estado }, {
-      onSuccess: () => toast.success('Estado actualizado'),
-      onError:   () => toast.error('Error al actualizar'),
-    });
+    cambiarEstado.mutate(
+      { id, estado },
+      {
+        onSuccess: () => toast.success("Estado actualizado"),
+        onError: () => toast.error("Error al actualizar"),
+      },
+    );
   };
 
-  const navSemana = (dir) => setSemanaBase(s => s.add(dir * 7, 'day'));
+  const navSemana = (dir) => setSemanaBase((s) => s.add(dir * 7, "day"));
 
   const navDia = (dir) => {
-    const nuevo = diaSeleccionado.add(dir, 'day');
+    const nuevo = diaSeleccionado.add(dir, "day");
     setDiaSeleccionado(nuevo);
-    if (!diasSemana.some(d => d.isSame(nuevo, 'day'))) {
+    if (!diasSemana.some((d) => d.isSame(nuevo, "day"))) {
       setSemanaBase(getLunes(nuevo));
     }
   };
@@ -106,84 +177,137 @@ export default function Dashboard() {
 
   const seleccionarDia = (dia) => {
     setDiaSeleccionado(dia);
-    setVista('dia');
+    setVista("dia");
   };
 
-  const esHoy = (dia) => dia.isSame(hoy, 'day');
-  const esDiaSeleccionado = (dia) => dia.isSame(diaSeleccionado, 'day');
+  const esHoy = (dia) => dia.isSame(hoy, "day");
+  const esDiaSeleccionado = (dia) => dia.isSame(diaSeleccionado, "day");
 
-  // ── Semana range label ────────────────────────────────────────────
-  const labelSemana = `${semanaBase.format('D MMM')} – ${semanaBase.add(5, 'day').format('D MMM YYYY')}`;
-  const labelDia    = diaSeleccionado.format('dddd D [de] MMMM YYYY');
+  const labelSemana = `${semanaBase.format("D MMM")} – ${semanaBase.add(5, "day").format("D MMM YYYY")}`;
+  const labelDia = diaSeleccionado.format("dddd D [de] MMMM YYYY");
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
-
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-gray-800 capitalize">
-            {vista === 'semana' ? labelSemana : labelDia}
+            {vista === "semana" ? labelSemana : labelDia}
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {vista === 'semana'
-              ? `${totalSemana} turno${totalSemana !== 1 ? 's' : ''} esta semana`
-              : `${turnosDia.length} turno${turnosDia.length !== 1 ? 's' : ''} este día`}
+            {vista === "semana"
+              ? `${totalSemana} turno${totalSemana !== 1 ? "s" : ""} esta semana`
+              : `${turnosDia.length} turno${turnosDia.length !== 1 ? "s" : ""} este día`}
           </p>
         </div>
 
-        {/* Controles */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Navegación */}
           <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
             <button
-              onClick={() => vista === 'semana' ? navSemana(-1) : navDia(-1)}
+              onClick={() => (vista === "semana" ? navSemana(-1) : navDia(-1))}
               className="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded text-sm transition-colors"
-            >←</button>
+            >
+              ←
+            </button>
             <button
               onClick={irHoy}
               className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            >Hoy</button>
+            >
+              Hoy
+            </button>
             <button
-              onClick={() => vista === 'semana' ? navSemana(1) : navDia(1)}
+              onClick={() => (vista === "semana" ? navSemana(1) : navDia(1))}
               className="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded text-sm transition-colors"
-            >→</button>
+            >
+              →
+            </button>
           </div>
 
-          {/* Toggle vista */}
           <div className="flex bg-white border border-gray-200 rounded-lg p-1">
             <button
-              onClick={() => setVista('semana')}
+              onClick={() => setVista("semana")}
               className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                vista === 'semana'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                vista === "semana"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
-            >Semana</button>
+            >
+              Semana
+            </button>
             <button
-              onClick={() => setVista('dia')}
+              onClick={() => setVista("dia")}
               className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                vista === 'dia'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                vista === "dia"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
-            >Día</button>
+            >
+              Día
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Stats de agenda ── */}
-      <div className="grid grid-cols-3 gap-3">
-        {(vista === 'semana' ? [
-          { label: 'Turnos semana', value: totalSemana,    color: 'text-blue-600',   bg: 'bg-blue-50' },
-          { label: 'Pendientes',    value: pendientesSem,  color: 'text-yellow-600', bg: 'bg-yellow-50' },
-          { label: 'Completados',   value: completadosSem, color: 'text-green-600',  bg: 'bg-green-50' },
-        ] : [
-          { label: 'Turnos hoy',  value: turnosDia.length, color: 'text-blue-600',   bg: 'bg-blue-50' },
-          { label: 'Pendientes',  value: pendientesDia,    color: 'text-yellow-600', bg: 'bg-yellow-50' },
-          { label: 'Completados', value: completadosDia,   color: 'text-green-600',  bg: 'bg-green-50' },
-        ]).map(({ label, value, color, bg }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
+      {/* ── Stats de agenda (Modificado a grid de 4) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {(vista === "semana"
+          ? [
+              {
+                label: "Turnos semana",
+                value: totalSemana,
+                color: "text-blue-600",
+                bg: "bg-blue-50",
+              },
+              {
+                label: "Pendientes",
+                value: pendientesSem,
+                color: "text-yellow-600",
+                bg: "bg-yellow-50",
+              },
+              {
+                label: "Completados",
+                value: completadosSem,
+                color: "text-green-600",
+                bg: "bg-green-50",
+              },
+              {
+                label: "Ausentes",
+                value: ausentesSem,
+                color: "text-red-500",
+                bg: "bg-red-50",
+              },
+            ]
+          : [
+              {
+                label: "Turnos hoy",
+                value: turnosDia.length,
+                color: "text-blue-600",
+                bg: "bg-blue-50",
+              },
+              {
+                label: "Pendientes",
+                value: pendientesDia,
+                color: "text-yellow-600",
+                bg: "bg-yellow-50",
+              },
+              {
+                label: "Completados",
+                value: completadosDia,
+                color: "text-green-600",
+                bg: "bg-green-50",
+              },
+              {
+                label: "Ausentes",
+                value: ausentesDia,
+                color: "text-red-500",
+                bg: "bg-red-50",
+              },
+            ]
+        ).map(({ label, value, color, bg }) => (
+          <div
+            key={label}
+            className={`bg-white rounded-xl border border-gray-200 p-4 ${bg}`}
+          >
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{label}</p>
           </div>
@@ -192,35 +316,48 @@ export default function Dashboard() {
 
       {/* ── Resumen del mes ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Resumen del mes</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+          Resumen del mes
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-gray-400 mb-0.5">Cobrado</p>
             <p className="text-xl font-bold text-emerald-600">
-              ${(stats?.cobradoMes ?? 0).toLocaleString('es-AR')}
+              ${(stats?.cobradoMes ?? 0).toLocaleString("es-AR")}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-0.5">Pendiente de cobro</p>
             <p className="text-xl font-bold text-orange-500">
-              ${(stats?.pendienteCobro ?? 0).toLocaleString('es-AR')}
+              ${(stats?.pendienteCobro ?? 0).toLocaleString("es-AR")}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Cumpleaños esta semana</p>
+            <p className="text-xs text-gray-400 mb-0.5">
+              Cumpleaños esta semana
+            </p>
             {cumpleanos.length === 0 ? (
               <p className="text-sm text-gray-300">Sin cumpleaños</p>
             ) : (
               <ul className="space-y-1 mt-0.5">
-                {cumpleanos.slice(0, 3).map(p => (
-                  <li key={p._id} className="text-xs text-gray-700 flex items-center gap-1.5">
+                {cumpleanos.slice(0, 3).map((p) => (
+                  <li
+                    key={p._id}
+                    className="text-xs text-gray-700 flex items-center gap-1.5"
+                  >
                     <span>🎂</span>
-                    <span className="font-medium">{p.apellido}, {p.nombre}</span>
-                    <span className="text-gray-400">({p.diaCumple}/{p.mesCumple})</span>
+                    <span className="font-medium">
+                      {p.apellido}, {p.nombre}
+                    </span>
+                    <span className="text-gray-400">
+                      ({p.diaCumple}/{p.mesCumple})
+                    </span>
                   </li>
                 ))}
                 {cumpleanos.length > 3 && (
-                  <li className="text-xs text-gray-400">+{cumpleanos.length - 3} más</li>
+                  <li className="text-xs text-gray-400">
+                    +{cumpleanos.length - 3} más
+                  </li>
                 )}
               </ul>
             )}
@@ -229,82 +366,89 @@ export default function Dashboard() {
       </div>
 
       {/* ── Vista Semana ── */}
-      {vista === 'semana' && (
+      {vista === "semana" && (
         <div className="overflow-x-auto">
           <div className="grid grid-cols-6 gap-3 min-w-[700px]">
             {turnosPorDia.map(({ dia, turnos, loading }) => (
               <div
-                key={dia.format('YYYY-MM-DD')}
+                key={dia.format("YYYY-MM-DD")}
                 className={`rounded-xl border flex flex-col overflow-hidden transition-all ${
                   esHoy(dia)
-                    ? 'border-blue-300 bg-blue-50/40'
-                    : 'border-gray-200 bg-white'
+                    ? "border-blue-300 bg-blue-50/40"
+                    : "border-gray-200 bg-white"
                 }`}
               >
-                {/* Header del día */}
                 <button
                   onClick={() => seleccionarDia(dia)}
                   className={`w-full px-3 py-2 text-left border-b transition-colors ${
                     esHoy(dia)
-                      ? 'border-blue-200 hover:bg-blue-100/50'
-                      : 'border-gray-100 hover:bg-gray-50'
+                      ? "border-blue-200 hover:bg-blue-100/50"
+                      : "border-gray-100 hover:bg-gray-50"
                   }`}
                 >
-                  <p className={`text-xs font-semibold uppercase tracking-wide ${esHoy(dia) ? 'text-blue-600' : 'text-gray-500'}`}>
-                    {dia.format('ddd')}
+                  <p
+                    className={`text-xs font-semibold uppercase tracking-wide ${esHoy(dia) ? "text-blue-600" : "text-gray-500"}`}
+                  >
+                    {dia.format("ddd")}
                   </p>
-                  <p className={`text-lg font-bold leading-tight ${esHoy(dia) ? 'text-blue-700' : 'text-gray-800'}`}>
-                    {dia.format('D')}
+                  <p
+                    className={`text-lg font-bold leading-tight ${esHoy(dia) ? "text-blue-700" : "text-gray-800"}`}
+                  >
+                    {dia.format("D")}
                   </p>
                   {turnos.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-0.5">{turnos.length} turno{turnos.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {turnos.length} turno{turnos.length !== 1 ? "s" : ""}
+                    </p>
                   )}
                 </button>
 
-                {/* Turnos del día */}
                 <div className="flex flex-col gap-1.5 p-2 flex-1">
                   {loading ? (
-                    <div className="text-xs text-gray-400 text-center py-4">...</div>
+                    <div className="text-xs text-gray-400 text-center py-4">
+                      ...
+                    </div>
                   ) : turnos.length === 0 ? (
-                    <div className="text-xs text-gray-300 text-center py-4">Sin turnos</div>
+                    <div className="text-xs text-gray-300 text-center py-4">
+                      Sin turnos
+                    </div>
                   ) : (
-                    turnos.map(turno => (
+                    turnos.map((turno) => (
                       <div
                         key={turno._id}
                         className={`rounded-lg p-2 border text-xs space-y-1 ${
-                          turno.estado === 'cancelado' || turno.estado === 'ausente'
-                            ? 'bg-gray-50 border-gray-100 opacity-60'
-                            : turno.estado === 'completado'
-                            ? 'bg-green-50 border-green-100'
-                            : turno.estado === 'confirmado'
-                            ? 'bg-blue-50 border-blue-100'
-                            : 'bg-white border-gray-200'
+                          turno.estado === "cancelado" ||
+                          turno.estado === "ausente"
+                            ? "bg-gray-50 border-gray-100 opacity-60"
+                            : turno.estado === "completado"
+                              ? "bg-green-50 border-green-100"
+                              : turno.estado === "confirmado"
+                                ? "bg-blue-50 border-blue-100"
+                                : "bg-white border-gray-200"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="font-mono text-gray-500 font-medium">
                             {turno.hora}
-                            {turno.duracion && <span className="text-gray-300 font-normal"> {turno.duracion}m</span>}
                           </span>
                           <Badge estado={turno.estado} />
                         </div>
                         <p className="font-medium text-gray-800 truncate leading-tight">
                           {turno.paciente?.apellido}, {turno.paciente?.nombre}
                         </p>
-                        {turno.motivo && (
-                          <p className="text-gray-400 truncate">{turno.motivo}</p>
-                        )}
                         {ACCIONES[turno.estado] && (
                           <div className="pt-0.5">
-                            {ACCIONES[turno.estado].map(({ label, next, cls }) => (
-                              <button
-                                key={next}
-                                onClick={() => handleEstado(turno._id, next)}
-                                className={`text-xs font-medium ${cls} transition-colors`}
-                              >
-                                {label}
-                              </button>
-                            ))}
+                            {ACCIONES[turno.estado].map(
+                              ({ label, next, cls }) => (
+                                <button
+                                  key={next}
+                                  onClick={() => handleEstado(turno._id, next)}
+                                  className={`text-xs font-medium ${cls} transition-colors`}
+                                >
+                                  {label}
+                                </button>
+                              ),
+                            )}
                           </div>
                         )}
                       </div>
@@ -318,57 +462,62 @@ export default function Dashboard() {
       )}
 
       {/* ── Vista Día ── */}
-      {vista === 'dia' && (
+      {vista === "dia" && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {/* Selector de día dentro de la semana */}
           <div className="flex border-b border-gray-100 overflow-x-auto">
-            {diasSemana.map(dia => (
+            {diasSemana.map((dia) => (
               <button
-                key={dia.format('YYYY-MM-DD')}
+                key={dia.format("YYYY-MM-DD")}
                 onClick={() => setDiaSeleccionado(dia)}
                 className={`flex-1 min-w-[80px] px-3 py-3 text-center transition-colors ${
                   esDiaSeleccionado(dia)
-                    ? 'bg-blue-600 text-white'
+                    ? "bg-blue-600 text-white"
                     : esHoy(dia)
-                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                    : 'text-gray-500 hover:bg-gray-50'
+                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                      : "text-gray-500 hover:bg-gray-50"
                 }`}
               >
-                <p className="text-xs font-semibold uppercase">{dia.format('ddd')}</p>
-                <p className={`text-lg font-bold leading-tight ${esDiaSeleccionado(dia) ? 'text-white' : ''}`}>
-                  {dia.format('D')}
+                <p className="text-xs font-semibold uppercase">
+                  {dia.format("ddd")}
+                </p>
+                <p
+                  className={`text-lg font-bold leading-tight ${esDiaSeleccionado(dia) ? "text-white" : ""}`}
+                >
+                  {dia.format("D")}
                 </p>
               </button>
             ))}
           </div>
 
-          {/* Lista de turnos del día */}
           {diaActualData?.loading ? (
-            <div className="p-8 text-center text-gray-400 text-sm">Cargando...</div>
+            <div className="p-8 text-center text-gray-400 text-sm">
+              Cargando...
+            </div>
           ) : turnosDia.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-gray-300 text-4xl mb-2">📅</p>
-              <p className="text-gray-400 text-sm">No hay turnos para este día</p>
+              <p className="text-gray-400 text-sm">
+                No hay turnos para este día
+              </p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-50">
-              {turnosDia.map(turno => (
+              {turnosDia.map((turno) => (
                 <li
                   key={turno._id}
                   className={`px-5 py-4 transition-colors ${
-                    turno.estado === 'cancelado' || turno.estado === 'ausente'
-                      ? 'opacity-50'
-                      : 'hover:bg-gray-50'
+                    turno.estado === "cancelado" || turno.estado === "ausente"
+                      ? "opacity-50"
+                      : "hover:bg-gray-50"
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    {/* Hora */}
                     <div className="w-14 flex-shrink-0 pt-0.5">
-                      <span className="text-sm font-mono font-semibold text-gray-700">{turno.hora}</span>
-                      <p className="text-xs text-gray-400">{turno.duracion}min</p>
+                      <span className="text-sm font-mono font-semibold text-gray-700">
+                        {turno.hora}
+                      </span>
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-gray-800">
@@ -377,28 +526,25 @@ export default function Dashboard() {
                         <Badge estado={turno.estado} />
                       </div>
                       {turno.motivo && (
-                        <p className="text-xs text-gray-500 mt-0.5">{turno.motivo}</p>
-                      )}
-                      {turno.paciente?.telefono && (
-                        <p className="text-xs text-gray-400 mt-0.5">📞 {turno.paciente.telefono}</p>
-                      )}
-                      {turno.notas && (
-                        <p className="text-xs text-gray-400 mt-1 italic">"{turno.notas}"</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {turno.motivo}
+                        </p>
                       )}
                     </div>
 
-                    {/* Acciones */}
                     {ACCIONES_FULL[turno.estado] && (
                       <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
-                        {ACCIONES_FULL[turno.estado].map(({ label, next, cls }) => (
-                          <button
-                            key={next}
-                            onClick={() => handleEstado(turno._id, next)}
-                            className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-colors ${cls}`}
-                          >
-                            {label}
-                          </button>
-                        ))}
+                        {ACCIONES_FULL[turno.estado].map(
+                          ({ label, next, cls }) => (
+                            <button
+                              key={next}
+                              onClick={() => handleEstado(turno._id, next)}
+                              className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-colors ${cls}`}
+                            >
+                              {label}
+                            </button>
+                          ),
+                        )}
                       </div>
                     )}
                   </div>
