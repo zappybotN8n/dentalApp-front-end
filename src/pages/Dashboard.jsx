@@ -124,12 +124,18 @@ export default function Dashboard() {
   );
   const turnosDia = diaActualData?.turnos || [];
 
+  // --- Lógica de contadores mejorada ---
   const totalSemana = turnosPorDia.reduce((acc, d) => acc + d.turnos.length, 0);
   const pendientesSem = turnosPorDia.reduce(
-    (acc, d) =>
-      acc +
-      d.turnos.filter((t) => ["pendiente", "confirmado"].includes(t.estado))
-        .length,
+    (acc, d) => acc + d.turnos.filter((t) => t.estado === "pendiente").length,
+    0,
+  );
+  const canceladosSem = turnosPorDia.reduce(
+    (acc, d) => acc + d.turnos.filter((t) => t.estado === "cancelado").length,
+    0,
+  );
+  const confirmadosSem = turnosPorDia.reduce(
+    (acc, d) => acc + d.turnos.filter((t) => t.estado === "confirmado").length,
     0,
   );
   const completadosSem = turnosPorDia.reduce(
@@ -141,8 +147,11 @@ export default function Dashboard() {
     0,
   );
 
-  const pendientesDia = turnosDia.filter((t) =>
-    ["pendiente", "confirmado"].includes(t.estado),
+  const pendientesDia = turnosDia.filter(
+    (t) => t.estado === "pendiente",
+  ).length;
+  const confirmadosDia = turnosDia.filter(
+    (t) => t.estado === "confirmado",
   ).length;
   const completadosDia = turnosDia.filter(
     (t) => t.estado === "completado",
@@ -225,21 +234,13 @@ export default function Dashboard() {
           <div className="flex bg-white border border-gray-200 rounded-lg p-1">
             <button
               onClick={() => setVista("semana")}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                vista === "semana"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${vista === "semana" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}
             >
               Semana
             </button>
             <button
               onClick={() => setVista("dia")}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                vista === "dia"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${vista === "dia" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}
             >
               Día
             </button>
@@ -247,12 +248,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stats de agenda (Grid Responsive Mejorado) ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* ── Stats de agenda (Grid 5 columnas) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {(vista === "semana"
           ? [
               {
-                label: "Turnos semana",
+                label: "Total semana",
                 value: totalSemana,
                 color: "text-blue-600",
                 bg: "bg-blue-50",
@@ -260,8 +261,14 @@ export default function Dashboard() {
               {
                 label: "Pendientes",
                 value: pendientesSem,
-                color: "text-yellow-600",
-                bg: "bg-yellow-50",
+                color: "text-orange-500",
+                bg: "bg-orange-50",
+              },
+              {
+                label: "Confirmados",
+                value: confirmadosSem,
+                color: "text-cyan-600",
+                bg: "bg-cyan-50",
               },
               {
                 label: "Completados",
@@ -278,16 +285,22 @@ export default function Dashboard() {
             ]
           : [
               {
-                label: "Turnos hoy",
+                label: "Total día",
                 value: turnosDia.length,
                 color: "text-blue-600",
                 bg: "bg-blue-50",
               },
               {
-                label: "Pendientes",
+                label: "Por confirmar",
                 value: pendientesDia,
-                color: "text-yellow-600",
-                bg: "bg-yellow-50",
+                color: "text-orange-500",
+                bg: "bg-orange-50",
+              },
+              {
+                label: "Confirmados",
+                value: confirmadosDia,
+                color: "text-cyan-600",
+                bg: "bg-cyan-50",
               },
               {
                 label: "Completados",
@@ -308,7 +321,7 @@ export default function Dashboard() {
             className={`bg-white rounded-xl border border-gray-200 p-4 ${bg}`}
           >
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
           </div>
         ))}
       </div>
@@ -353,39 +366,24 @@ export default function Dashboard() {
                     </span>
                   </li>
                 ))}
-                {cumpleanos.length > 3 && (
-                  <li className="text-xs text-gray-400">
-                    +{cumpleanos.length - 3} más
-                  </li>
-                )}
               </ul>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Vista Semana (Mejoras Responsive en Tarjetas) ── */}
+      {/* ── Vista Semana (Cards Responsive) ── */}
       {vista === "semana" && (
         <div className="overflow-x-auto">
-          {/* Mantenemos el min-width para asegurar que los 6 días sean accesibles vía scroll horizontal */}
-          <div className="grid grid-cols-6 gap-3 min-w-[900px] lg:min-w-0 lg:grid-cols-6">
+          <div className="grid grid-cols-6 gap-3 min-w-[900px] lg:min-w-0">
             {turnosPorDia.map(({ dia, turnos, loading }) => (
               <div
                 key={dia.format("YYYY-MM-DD")}
-                className={`rounded-xl border flex flex-col overflow-hidden transition-all ${
-                  esHoy(dia)
-                    ? "border-blue-300 bg-blue-50/40"
-                    : "border-gray-200 bg-white"
-                }`}
+                className={`rounded-xl border flex flex-col overflow-hidden transition-all ${esHoy(dia) ? "border-blue-300 bg-blue-50/40" : "border-gray-200 bg-white"}`}
               >
-                {/* Header del día */}
                 <button
                   onClick={() => seleccionarDia(dia)}
-                  className={`w-full px-3 py-2 text-left border-b transition-colors ${
-                    esHoy(dia)
-                      ? "border-blue-200 hover:bg-blue-100/50"
-                      : "border-gray-100 hover:bg-gray-50"
-                  }`}
+                  className={`w-full px-3 py-2 text-left border-b transition-colors ${esHoy(dia) ? "border-blue-200 hover:bg-blue-100/50" : "border-gray-100 hover:bg-gray-50"}`}
                 >
                   <p
                     className={`text-xs font-semibold uppercase tracking-wide ${esHoy(dia) ? "text-blue-600" : "text-gray-500"}`}
@@ -397,14 +395,8 @@ export default function Dashboard() {
                   >
                     {dia.format("D")}
                   </p>
-                  {turnos.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {turnos.length} turno{turnos.length !== 1 ? "s" : ""}
-                    </p>
-                  )}
                 </button>
 
-                {/* Turnos del día */}
                 <div className="flex flex-col gap-2 p-2 flex-1">
                   {loading ? (
                     <div className="text-xs text-gray-400 text-center py-4">
@@ -418,49 +410,19 @@ export default function Dashboard() {
                     turnos.map((turno) => (
                       <div
                         key={turno._id}
-                        className={`rounded-lg p-2.5 border text-xs space-y-1.5 ${
-                          turno.estado === "cancelado" ||
-                          turno.estado === "ausente"
-                            ? "bg-gray-50 border-gray-100 opacity-60"
-                            : turno.estado === "completado"
-                              ? "bg-green-50 border-green-100"
-                              : turno.estado === "confirmado"
-                                ? "bg-blue-50 border-blue-100"
-                                : "bg-white border-gray-200"
-                        }`}
+                        className={`rounded-lg p-2.5 border text-xs space-y-1.5 ${turno.estado === "cancelado" || turno.estado === "ausente" ? "bg-gray-50 border-gray-100 opacity-60" : turno.estado === "completado" ? "bg-green-50 border-green-100" : turno.estado === "confirmado" ? "bg-cyan-50 border-cyan-100" : "bg-white border-gray-200"}`}
                       >
-                        {/* Fila superior: Hora y Badge (Stack en móvil, row en md:) */}
-                        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-1">
-                          <span className="font-mono text-gray-600 font-medium whitespace-nowrap">
+                        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                          <span className="font-mono text-gray-600 font-medium">
                             {turno.hora}
-                            {turno.duracion && (
-                              <span className="text-gray-300 font-normal md:hidden lg:inline">
-                                {" "}
-                                {turno.duracion}m
-                              </span>
-                            )}
                           </span>
                           <div className="flex md:justify-end">
                             <Badge estado={turno.estado} />
                           </div>
                         </div>
-
-                        {/* Paciente y Motivo */}
-                        <div className="space-y-0.5">
-                          <p className="font-semibold text-gray-900 leading-tight break-words">
-                            {turno.paciente?.apellido}, {turno.paciente?.nombre}
-                          </p>
-                          {turno.motivo && (
-                            <p
-                              className="text-gray-500 truncate"
-                              title={turno.motivo}
-                            >
-                              {turno.motivo}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Acciones Rápidas (Ajuste de padding para touch en móvil) */}
+                        <p className="font-semibold text-gray-900 leading-tight break-words">
+                          {turno.paciente?.apellido}, {turno.paciente?.nombre}
+                        </p>
                         {ACCIONES[turno.estado] && (
                           <div className="pt-1 flex flex-wrap gap-1.5 border-t border-gray-100 md:border-none md:pt-0">
                             {ACCIONES[turno.estado].map(
@@ -486,22 +448,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Vista Día (Mantenemos igual, ya es responsive) ── */}
+      {/* ── Vista Día (Responsive Layout) ── */}
       {vista === "dia" && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {/* Selector de día dentro de la semana */}
           <div className="flex border-b border-gray-100 overflow-x-auto">
             {diasSemana.map((dia) => (
               <button
                 key={dia.format("YYYY-MM-DD")}
                 onClick={() => setDiaSeleccionado(dia)}
-                className={`flex-1 min-w-[80px] px-3 py-3 text-center transition-colors ${
-                  esDiaSeleccionado(dia)
-                    ? "bg-blue-600 text-white"
-                    : esHoy(dia)
-                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                      : "text-gray-500 hover:bg-gray-50"
-                }`}
+                className={`flex-1 min-w-[80px] px-3 py-3 text-center transition-colors ${esDiaSeleccionado(dia) ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
               >
                 <p className="text-xs font-semibold uppercase">
                   {dia.format("ddd")}
@@ -514,71 +469,49 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-
-          {/* Lista de turnos del día */}
           {diaActualData?.loading ? (
             <div className="p-8 text-center text-gray-400 text-sm">
               Cargando...
             </div>
           ) : turnosDia.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="text-gray-300 text-4xl mb-2">📅</p>
-              <p className="text-gray-400 text-sm">
-                No hay turnos para este día
-              </p>
+            <div className="p-12 text-center text-gray-400 text-sm">
+              No hay turnos para este día
             </div>
           ) : (
             <ul className="divide-y divide-gray-50">
               {turnosDia.map((turno) => (
                 <li
                   key={turno._id}
-                  className={`px-4 py-4 md:px-5 transition-colors ${
-                    turno.estado === "cancelado" || turno.estado === "ausente"
-                      ? "opacity-50"
-                      : "hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-4 transition-colors ${turno.estado === "cancelado" || turno.estado === "ausente" ? "opacity-50" : "hover:bg-gray-50"}`}
                 >
-                  {/* Layout adaptable: Columna en móvil, Row en sm: */}
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-                    {/* Hora y Duración */}
-                    <div className="flex items-center gap-2 sm:w-14 sm:flex-shrink-0 sm:flex-col sm:items-start sm:gap-0 sm:pt-0.5">
-                      <span className="text-sm font-mono font-semibold text-gray-700 whitespace-nowrap">
+                    <div className="flex items-center gap-2 sm:w-14 sm:flex-col sm:items-start">
+                      <span className="text-sm font-mono font-semibold text-gray-700">
                         {turno.hora}
                       </span>
-                      <p className="text-xs text-gray-400">
-                        {turno.duracion}min
-                      </p>
+                      <p className="text-xs text-gray-400">{turno.duracion}m</p>
                     </div>
-
-                    {/* Info Central */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-800 break-words">
+                        <p className="text-sm font-semibold text-gray-800">
                           {turno.paciente?.apellido}, {turno.paciente?.nombre}
                         </p>
                         <Badge estado={turno.estado} />
                       </div>
-                      {turno.motivo && (
-                        <p className="text-xs text-gray-500 mt-0.5 break-words">
-                          {turno.motivo}
-                        </p>
-                      )}
                       {turno.paciente?.telefono && (
-                        <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
+                        <p className="text-xs text-gray-400">
                           📞 {turno.paciente.telefono}
                         </p>
                       )}
                     </div>
-
-                    {/* Acciones Completas (Se alinean a la derecha/abajo) */}
                     {ACCIONES_FULL[turno.estado] && (
-                      <div className="flex flex-wrap gap-1.5 sm:flex-shrink-0 sm:justify-end sm:pl-2">
+                      <div className="flex flex-wrap gap-1.5 sm:justify-end">
                         {ACCIONES_FULL[turno.estado].map(
                           ({ label, next, cls }) => (
                             <button
                               key={next}
                               onClick={() => handleEstado(turno._id, next)}
-                              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors sm:px-2.5 sm:py-1 ${cls}`}
+                              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${cls}`}
                             >
                               {label}
                             </button>
