@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
@@ -420,9 +421,12 @@ export default function Dashboard() {
                             <Badge estado={turno.estado} />
                           </div>
                         </div>
-                        <p className="font-semibold text-gray-900 leading-tight break-words">
+                        <Link
+                          to={`/pacientes/${turno.paciente?._id}`}
+                          className="font-semibold text-gray-900 leading-tight break-words hover:text-blue-600 hover:underline transition-colors"
+                        >
                           {turno.paciente?.apellido}, {turno.paciente?.nombre}
-                        </p>
+                        </Link>
                         {ACCIONES[turno.estado] && (
                           <div className="pt-1 flex flex-wrap gap-1.5 border-t border-gray-100 md:border-none md:pt-0">
                             {ACCIONES[turno.estado].map(
@@ -493,9 +497,12 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-800">
+                        <Link
+                          to={`/pacientes/${turno.paciente?._id}`}
+                          className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline transition-colors"
+                        >
                           {turno.paciente?.apellido}, {turno.paciente?.nombre}
-                        </p>
+                        </Link>
                         <Badge estado={turno.estado} />
                       </div>
                       {turno.paciente?.telefono && (
