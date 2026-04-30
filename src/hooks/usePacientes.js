@@ -55,6 +55,7 @@ export const useAgregarHistorial = () => {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] });
       qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, 'stats'] });
+      qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, 'pendientes'] });
     }
   });
 };
@@ -67,6 +68,7 @@ export const useActualizarHistorial = () => {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] });
       qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, 'stats'] });
+      qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, 'pendientes'] });
     }
   });
 };
