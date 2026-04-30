@@ -80,6 +80,15 @@ export const usePacientesStats = () => {
   });
 };
 
+export const usePendientesCobro = (enabled = false) => {
+  const { usuario } = useAuth();
+  return useQuery({
+    queryKey: ['pacientes', usuario?._id, 'pendientes'],
+    queryFn: () => pacientesAPI.getPendientes().then(r => r.data.data),
+    enabled: !!usuario && enabled,
+  });
+};
+
 export const useCumpleanos = (periodo = 'semana') => {
   const { usuario } = useAuth();
   return useQuery({
