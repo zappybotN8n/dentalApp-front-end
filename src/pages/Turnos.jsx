@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTurnos, useCrearTurno, useCambiarEstado, useEliminarTurno } from '../hooks/useTurnos';
-import { usePacientes } from '../hooks/usePacientes';
 import { useConfiguracion } from '../hooks/useConfiguracion';
 import { formatFechaInput, ESTADOS_TURNO, generarSlots } from '../utils/fechas';
 import { turnosAPI } from '../services/api';
@@ -10,6 +9,7 @@ import { turnoSchema } from '../validations/schemas';
 import { toast } from 'sonner';
 import ModalConfirmacion from '../components/ui/ModalConfirmacion';
 import CalendarioInput from '../components/ui/CalendarioInput';
+import PacienteCombobox from '../components/ui/PacienteCombobox';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
@@ -54,9 +54,7 @@ export default function Turnos() {
   const { data: turnosFechaModalResp } = useTurnos({ fecha: fechaModal, limit: 100 });
   const turnosFechaModal = turnosFechaModalResp?.data ?? [];
 
-  const { data: pacientesResp } = usePacientes({ limit: 100 });
-  const { data: config }        = useConfiguracion();
-  const pacientes = pacientesResp?.data || [];
+  const { data: config } = useConfiguracion();
 
   const slotsBloqueados = new Set(
     turnosFechaModal.filter(t => t.estado !== 'cancelado').map(t => t.hora)
@@ -384,15 +382,12 @@ export default function Turnos() {
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Paciente *</label>
-                <select
-                  {...register('paciente')}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                >
-                  <option value="">Seleccionar...</option>
-                  {pacientes.map(p => (
-                    <option key={p._id} value={p._id}>{p.apellido}, {p.nombre}</option>
-                  ))}
-                </select>
+                <input type="hidden" {...register('paciente')} />
+                <PacienteCombobox
+                  value={undefined}
+                  onChange={(id) => setValue('paciente', id, { shouldValidate: true })}
+                  error={!!errors.paciente}
+                />
                 {errors.paciente && <p className="text-red-500 text-xs mt-1">{errors.paciente.message}</p>}
               </div>
 
