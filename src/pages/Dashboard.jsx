@@ -124,7 +124,6 @@ export default function Dashboard() {
   );
   const turnosDia = diaActualData?.turnos || [];
 
-  // --- Lógica de contadores actualizada ---
   const totalSemana = turnosPorDia.reduce((acc, d) => acc + d.turnos.length, 0);
   const pendientesSem = turnosPorDia.reduce(
     (acc, d) =>
@@ -248,7 +247,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stats de agenda (Modificado a grid de 4) ── */}
+      {/* ── Stats de agenda (Grid Responsive Mejorado) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {(vista === "semana"
           ? [
@@ -365,10 +364,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Vista Semana ── */}
+      {/* ── Vista Semana (Mejoras Responsive en Tarjetas) ── */}
       {vista === "semana" && (
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-6 gap-3 min-w-[700px]">
+          {/* Mantenemos el min-width para asegurar que los 6 días sean accesibles vía scroll horizontal */}
+          <div className="grid grid-cols-6 gap-3 min-w-[900px] lg:min-w-0 lg:grid-cols-6">
             {turnosPorDia.map(({ dia, turnos, loading }) => (
               <div
                 key={dia.format("YYYY-MM-DD")}
@@ -378,6 +378,7 @@ export default function Dashboard() {
                     : "border-gray-200 bg-white"
                 }`}
               >
+                {/* Header del día */}
                 <button
                   onClick={() => seleccionarDia(dia)}
                   className={`w-full px-3 py-2 text-left border-b transition-colors ${
@@ -403,7 +404,8 @@ export default function Dashboard() {
                   )}
                 </button>
 
-                <div className="flex flex-col gap-1.5 p-2 flex-1">
+                {/* Turnos del día */}
+                <div className="flex flex-col gap-2 p-2 flex-1">
                   {loading ? (
                     <div className="text-xs text-gray-400 text-center py-4">
                       ...
@@ -416,7 +418,7 @@ export default function Dashboard() {
                     turnos.map((turno) => (
                       <div
                         key={turno._id}
-                        className={`rounded-lg p-2 border text-xs space-y-1 ${
+                        className={`rounded-lg p-2.5 border text-xs space-y-1.5 ${
                           turno.estado === "cancelado" ||
                           turno.estado === "ausente"
                             ? "bg-gray-50 border-gray-100 opacity-60"
@@ -427,23 +429,46 @@ export default function Dashboard() {
                                 : "bg-white border-gray-200"
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono text-gray-500 font-medium">
+                        {/* Fila superior: Hora y Badge (Stack en móvil, row en md:) */}
+                        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-1">
+                          <span className="font-mono text-gray-600 font-medium whitespace-nowrap">
                             {turno.hora}
+                            {turno.duracion && (
+                              <span className="text-gray-300 font-normal md:hidden lg:inline">
+                                {" "}
+                                {turno.duracion}m
+                              </span>
+                            )}
                           </span>
-                          <Badge estado={turno.estado} />
+                          <div className="flex md:justify-end">
+                            <Badge estado={turno.estado} />
+                          </div>
                         </div>
-                        <p className="font-medium text-gray-800 truncate leading-tight">
-                          {turno.paciente?.apellido}, {turno.paciente?.nombre}
-                        </p>
+
+                        {/* Paciente y Motivo */}
+                        <div className="space-y-0.5">
+                          <p className="font-semibold text-gray-900 leading-tight break-words">
+                            {turno.paciente?.apellido}, {turno.paciente?.nombre}
+                          </p>
+                          {turno.motivo && (
+                            <p
+                              className="text-gray-500 truncate"
+                              title={turno.motivo}
+                            >
+                              {turno.motivo}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Acciones Rápidas (Ajuste de padding para touch en móvil) */}
                         {ACCIONES[turno.estado] && (
-                          <div className="pt-0.5">
+                          <div className="pt-1 flex flex-wrap gap-1.5 border-t border-gray-100 md:border-none md:pt-0">
                             {ACCIONES[turno.estado].map(
                               ({ label, next, cls }) => (
                                 <button
                                   key={next}
                                   onClick={() => handleEstado(turno._id, next)}
-                                  className={`text-xs font-medium ${cls} transition-colors`}
+                                  className={`text-xs font-semibold ${cls} transition-colors py-1 md:py-0`}
                                 >
                                   {label}
                                 </button>
@@ -461,9 +486,10 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Vista Día ── */}
+      {/* ── Vista Día (Mantenemos igual, ya es responsive) ── */}
       {vista === "dia" && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {/* Selector de día dentro de la semana */}
           <div className="flex border-b border-gray-100 overflow-x-auto">
             {diasSemana.map((dia) => (
               <button
@@ -489,6 +515,7 @@ export default function Dashboard() {
             ))}
           </div>
 
+          {/* Lista de turnos del día */}
           {diaActualData?.loading ? (
             <div className="p-8 text-center text-gray-400 text-sm">
               Cargando...
@@ -505,41 +532,53 @@ export default function Dashboard() {
               {turnosDia.map((turno) => (
                 <li
                   key={turno._id}
-                  className={`px-5 py-4 transition-colors ${
+                  className={`px-4 py-4 md:px-5 transition-colors ${
                     turno.estado === "cancelado" || turno.estado === "ausente"
                       ? "opacity-50"
                       : "hover:bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 flex-shrink-0 pt-0.5">
-                      <span className="text-sm font-mono font-semibold text-gray-700">
+                  {/* Layout adaptable: Columna en móvil, Row en sm: */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                    {/* Hora y Duración */}
+                    <div className="flex items-center gap-2 sm:w-14 sm:flex-shrink-0 sm:flex-col sm:items-start sm:gap-0 sm:pt-0.5">
+                      <span className="text-sm font-mono font-semibold text-gray-700 whitespace-nowrap">
                         {turno.hora}
                       </span>
+                      <p className="text-xs text-gray-400">
+                        {turno.duracion}min
+                      </p>
                     </div>
 
-                    <div className="flex-1 min-w-0">
+                    {/* Info Central */}
+                    <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-800">
+                        <p className="text-sm font-semibold text-gray-800 break-words">
                           {turno.paciente?.apellido}, {turno.paciente?.nombre}
                         </p>
                         <Badge estado={turno.estado} />
                       </div>
                       {turno.motivo && (
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 mt-0.5 break-words">
                           {turno.motivo}
+                        </p>
+                      )}
+                      {turno.paciente?.telefono && (
+                        <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
+                          📞 {turno.paciente.telefono}
                         </p>
                       )}
                     </div>
 
+                    {/* Acciones Completas (Se alinean a la derecha/abajo) */}
                     {ACCIONES_FULL[turno.estado] && (
-                      <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                      <div className="flex flex-wrap gap-1.5 sm:flex-shrink-0 sm:justify-end sm:pl-2">
                         {ACCIONES_FULL[turno.estado].map(
                           ({ label, next, cls }) => (
                             <button
                               key={next}
                               onClick={() => handleEstado(turno._id, next)}
-                              className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-colors ${cls}`}
+                              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors sm:px-2.5 sm:py-1 ${cls}`}
                             >
                               {label}
                             </button>
