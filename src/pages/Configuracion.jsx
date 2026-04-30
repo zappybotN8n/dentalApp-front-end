@@ -118,7 +118,7 @@ export default function Configuracion() {
       setIntervalo(config.intervalo);
       setDuracionDefault(config.duracionDefault);
       setFechasBloqueadas(
-        (config.fechasBloqueadas || []).map(f => dayjs(f).format('YYYY-MM-DD'))
+        (config.fechasBloqueadas || []).map(f => new Date(f).toISOString().slice(0, 10))
       );
     }
   }, [config]);
