@@ -77,7 +77,6 @@ export const usePacientesStats = () => {
     queryKey: ['pacientes', usuario?._id, 'stats'],
     queryFn: () => pacientesAPI.getStats().then(r => r.data.data),
     enabled: !!usuario,
-    staleTime: 1000 * 60 * 5,
   });
 };
 
