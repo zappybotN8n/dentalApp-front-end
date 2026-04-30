@@ -64,3 +64,32 @@ export const useActualizarHistorial = () => {
     onSuccess: (_, { id }) => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] })
   });
 };
+
+export const usePacientesStats = () => {
+  const { usuario } = useAuth();
+  return useQuery({
+    queryKey: ['pacientes', usuario?._id, 'stats'],
+    queryFn: () => pacientesAPI.getStats().then(r => r.data.data),
+    enabled: !!usuario,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useCumpleanos = (periodo = 'semana') => {
+  const { usuario } = useAuth();
+  return useQuery({
+    queryKey: ['pacientes', usuario?._id, 'cumpleanos', periodo],
+    queryFn: () => pacientesAPI.getCumpleanos(periodo).then(r => r.data.data),
+    enabled: !!usuario,
+    staleTime: 1000 * 60 * 60,
+  });
+};
+
+export const useTurnosDePacientePaginados = (id, params) => {
+  const { usuario } = useAuth();
+  return useQuery({
+    queryKey: ['pacientes', usuario?._id, id, 'turnos', params],
+    queryFn: () => pacientesAPI.getTurnos(id, params).then(r => r.data),
+    enabled: !!id && !!usuario
+  });
+};

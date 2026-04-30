@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useConfiguracion, useActualizarConfiguracion } from '../hooks/useConfiguracion';
 import { DIAS_SEMANA, generarSlots } from '../utils/fechas';
 import { toast } from 'sonner';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+
+dayjs.locale('es');
 
 const INTERVALOS = [
   { value: 15, label: '15 minutos' },
@@ -11,15 +15,100 @@ const INTERVALOS = [
   { value: 60, label: '1 hora' },
 ];
 
+const DIAS_CAB = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
+
+function CalendarioBloqueo({ bloqueadas, onToggle }) {
+  const hoy = dayjs().startOf('day');
+  const [mes, setMes] = useState(hoy);
+
+  const inicioMes  = mes.startOf('month');
+  const totalDias  = mes.daysInMonth();
+  const offset     = inicioMes.day();
+
+  const celdas = [];
+  for (let i = 0; i < offset; i++) celdas.push(null);
+  for (let d = 1; d <= totalDias; d++) celdas.push(inicioMes.date(d));
+
+  const puedePrev = !mes.subtract(1, 'month').endOf('month').isBefore(hoy);
+
+  return (
+    <div className="border border-gray-200 rounded-xl p-3 bg-white select-none max-w-xs">
+      <div className="flex items-center justify-between mb-2 px-1">
+        <button
+          type="button"
+          onClick={() => puedePrev && setMes(m => m.subtract(1, 'month'))}
+          disabled={!puedePrev}
+          className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+        >‹</button>
+        <span className="text-xs font-semibold text-gray-700 capitalize">{mes.format('MMMM YYYY')}</span>
+        <button
+          type="button"
+          onClick={() => setMes(m => m.add(1, 'month'))}
+          className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+        >›</button>
+      </div>
+
+      <div className="grid grid-cols-7 mb-1">
+        {DIAS_CAB.map(d => (
+          <div key={d} className="text-center text-xs text-gray-400 font-medium py-1">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {celdas.map((dia, i) => {
+          if (!dia) return <div key={`v-${i}`} />;
+          const pasado    = dia.isBefore(hoy);
+          const fechaStr  = dia.format('YYYY-MM-DD');
+          const bloqueado = bloqueadas.includes(fechaStr);
+          const esHoy     = dia.isSame(hoy, 'day');
+
+          return (
+            <button
+              key={fechaStr}
+              type="button"
+              disabled={pasado}
+              onClick={() => onToggle(fechaStr)}
+              title={bloqueado ? 'Click para desbloquear' : 'Click para bloquear'}
+              className={[
+                'text-xs w-full aspect-square flex items-center justify-center rounded-lg font-medium transition-colors',
+                pasado
+                  ? 'text-gray-200 cursor-not-allowed'
+                  : bloqueado
+                  ? 'bg-red-500 text-white'
+                  : 'text-gray-700 hover:bg-red-50 cursor-pointer',
+                esHoy && !bloqueado && !pasado ? 'ring-1 ring-blue-400' : '',
+              ].join(' ')}
+            >
+              {dia.date()}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-3 px-1">
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-sm bg-red-500" />
+          <span className="text-xs text-gray-400">Bloqueado</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-sm ring-1 ring-blue-400" />
+          <span className="text-xs text-gray-400">Hoy</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Configuracion() {
   const { data: config, isLoading } = useConfiguracion();
   const actualizar = useActualizarConfiguracion();
 
-  const [diasAtencion, setDiasAtencion] = useState([1, 2, 3, 4, 5]);
-  const [horarioInicio, setHorarioInicio] = useState('08:00');
-  const [horarioFin, setHorarioFin] = useState('18:00');
-  const [intervalo, setIntervalo] = useState(30);
-  const [duracionDefault, setDuracionDefault] = useState(30);
+  const [diasAtencion, setDiasAtencion]         = useState([1, 2, 3, 4, 5]);
+  const [horarioInicio, setHorarioInicio]       = useState('08:00');
+  const [horarioFin, setHorarioFin]             = useState('18:00');
+  const [intervalo, setIntervalo]               = useState(30);
+  const [duracionDefault, setDuracionDefault]   = useState(30);
+  const [fechasBloqueadas, setFechasBloqueadas] = useState([]);
 
   useEffect(() => {
     if (config) {
@@ -28,12 +117,20 @@ export default function Configuracion() {
       setHorarioFin(config.horarioFin);
       setIntervalo(config.intervalo);
       setDuracionDefault(config.duracionDefault);
+      setFechasBloqueadas(
+        (config.fechasBloqueadas || []).map(f => dayjs(f).format('YYYY-MM-DD'))
+      );
     }
   }, [config]);
 
   const toggleDia = (val) =>
     setDiasAtencion(prev =>
       prev.includes(val) ? prev.filter(d => d !== val) : [...prev, val]
+    );
+
+  const toggleFechaBloqueada = (fechaStr) =>
+    setFechasBloqueadas(prev =>
+      prev.includes(fechaStr) ? prev.filter(f => f !== fechaStr) : [...prev, fechaStr]
     );
 
   const handleSubmit = async (e) => {
@@ -47,7 +144,9 @@ export default function Configuracion() {
       return;
     }
     try {
-      await actualizar.mutateAsync({ diasAtencion, horarioInicio, horarioFin, intervalo, duracionDefault });
+      await actualizar.mutateAsync({
+        diasAtencion, horarioInicio, horarioFin, intervalo, duracionDefault, fechasBloqueadas
+      });
       toast.success('Configuración guardada correctamente');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al guardar la configuración.');
@@ -58,13 +157,18 @@ export default function Configuracion() {
     ? generarSlots(horarioInicio, horarioFin, intervalo)
     : [];
 
+  const bloqueadasOrdenadas = useMemo(
+    () => [...fechasBloqueadas].sort(),
+    [fechasBloqueadas]
+  );
+
   if (isLoading) return <div className="p-8 text-gray-500 text-sm">Cargando configuración...</div>;
 
   return (
     <div className="p-6 max-w-2xl">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-800">Configuración de atención</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Definí los días y horarios en que se pueden reservar turnos.</p>
+        <p className="text-sm text-gray-500 mt-0.5">Definí los días, horarios y fechas bloqueadas.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -147,6 +251,27 @@ export default function Configuracion() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Fechas bloqueadas */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Fechas bloqueadas</h3>
+          <p className="text-xs text-gray-400 mb-4">Hacé click en un día para bloquearlo (vacaciones, feriados). Click nuevamente para desbloquear.</p>
+          <CalendarioBloqueo bloqueadas={fechasBloqueadas} onToggle={toggleFechaBloqueada} />
+          {bloqueadasOrdenadas.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {bloqueadasOrdenadas.map(f => (
+                <span key={f} className="flex items-center gap-1 text-xs bg-red-50 border border-red-200 text-red-700 px-2 py-1 rounded-full">
+                  {dayjs(f).format('D MMM YYYY')}
+                  <button
+                    type="button"
+                    onClick={() => toggleFechaBloqueada(f)}
+                    className="ml-0.5 text-red-400 hover:text-red-600"
+                  >×</button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Preview de slots */}
