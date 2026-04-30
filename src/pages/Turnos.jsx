@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useTurnos, useCrearTurno, useCambiarEstado, useEliminarTurno } from '../hooks/useTurnos';
+import { useState, useEffect } from 'react';
+import { useTurnos, useCrearTurno, useActualizarTurno, useCambiarEstado, useEliminarTurno } from '../hooks/useTurnos';
+import { usePacientes } from '../hooks/usePacientes';
 import { useConfiguracion } from '../hooks/useConfiguracion';
 import { formatFechaInput, ESTADOS_TURNO, generarSlots } from '../utils/fechas';
 import { turnosAPI } from '../services/api';
@@ -38,6 +39,8 @@ export default function Turnos() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [fechaModal, setFechaModal]   = useState(hoy);
   const [turnoACancelar, setTurnoACancelar] = useState(null);
+  const [turnoAEditar, setTurnoAEditar] = useState(null);
+  const [fechaEditar, setFechaEditar] = useState(hoy);
   const [exportando, setExportando] = useState(false);
 
   // ── Datos ──────────────────────────────────────────────────────────
@@ -52,6 +55,7 @@ export default function Turnos() {
   const pagination = turnosResp?.pagination;
 
   const { data: turnosFechaModalResp } = useTurnos({ fecha: fechaModal, limit: 100 });
+  const { data: turnosFechaEditarResp } = useTurnos({ fecha: fechaEditar, limit: 100 });
   const turnosFechaModal = turnosFechaModalResp?.data ?? [];
 
   const { data: config } = useConfiguracion();
@@ -70,11 +74,16 @@ export default function Turnos() {
     : [];
 
   // ── Mutations ──────────────────────────────────────────────────────
-  const crearTurno   = useCrearTurno();
+  const crearTurno    = useCrearTurno();
+  const actualizarTurno = useActualizarTurno();
   const cambiarEstado = useCambiarEstado();
   const eliminarTurno = useEliminarTurno();
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+    resolver: zodResolver(turnoSchema),
+  });
+
+  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, setValue: setValueEdit, formState: { errors: errorsEdit } } = useForm({
     resolver: zodResolver(turnoSchema),
   });
 
@@ -116,6 +125,32 @@ export default function Turnos() {
   };
 
   const cerrarModal = () => { setModalAbierto(false); reset(); };
+
+  const abrirEditar = (turno) => {
+    const f = dayjs(turno.fecha).format('YYYY-MM-DD');
+    setTurnoAEditar(turno);
+    setFechaEditar(f);
+    resetEdit({
+      paciente: turno.paciente?._id || turno.paciente,
+      fecha: f,
+      hora: turno.hora,
+      duracion: turno.duracion,
+      motivo: turno.motivo || '',
+      notas: turno.notas || '',
+    });
+  };
+
+  const cerrarEditar = () => { setTurnoAEditar(null); resetEdit(); };
+
+  const onSubmitEditar = async (data) => {
+    try {
+      await actualizarTurno.mutateAsync({ id: turnoAEditar._id, data });
+      toast.success('Turno reprogramado correctamente');
+      cerrarEditar();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error al reprogramar turno');
+    }
+  };;
 
   const handleFechaModal = (nuevaFecha) => {
     setFechaModal(nuevaFecha);
@@ -300,6 +335,12 @@ export default function Turnos() {
 
                 {/* Acciones */}
                 <div className="flex gap-1.5 flex-shrink-0 flex-wrap sm:justify-end">
+                  {['pendiente','confirmado'].includes(t.estado) && (
+                    <button
+                      onClick={() => abrirEditar(t)}
+                      className="text-xs font-medium px-2.5 py-1 rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors"
+                    >Reprogramar</button>
+                  )}
                   {t.estado === 'pendiente' && (
                     <button
                       onClick={() => cambiarEstado.mutate({ id: t._id, estado: 'confirmado' }, { onSuccess: () => toast.success('Turno confirmado') })}
@@ -367,6 +408,95 @@ export default function Turnos() {
           onCancelar={() => setTurnoACancelar(null)}
         />
       )}
+
+      {/* ── Modal reprogramar turno ── */}
+      {turnoAEditar && (() => {
+        const turnosFechaEditar = turnosFechaEditarResp?.data ?? [];
+        const slotsBloqueadosEditar = new Set(
+          turnosFechaEditar.filter(t => t.estado !== 'cancelado' && t._id !== turnoAEditar._id).map(t => t.hora)
+        );
+        const esHoyEditar  = fechaEditar === hoy;
+        const horariosEditar = config
+          ? generarSlots(config.horarioInicio, config.horarioFin, config.intervalo).filter(slot => {
+              if (slotsBloqueadosEditar.has(slot)) return false;
+              if (esHoyEditar && slot <= horaActual) return false;
+              return true;
+            })
+          : [];
+
+        return (
+          <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Reprogramar turno</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {turnoAEditar.paciente?.apellido}, {turnoAEditar.paciente?.nombre}
+                  </p>
+                </div>
+                <button onClick={cerrarEditar} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              </div>
+
+              <form onSubmit={handleSubmitEdit(onSubmitEditar)} className="space-y-4">
+                <input type="hidden" {...registerEdit('paciente')} />
+                <input type="hidden" {...registerEdit('fecha')} />
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Nueva fecha</label>
+                  <CalendarioInput
+                    value={fechaEditar}
+                    onChange={(f) => {
+                      setFechaEditar(f);
+                      setValueEdit('fecha', f, { shouldValidate: true });
+                      setValueEdit('hora', '');
+                    }}
+                    diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
+                    fechasBloqueadas={config?.fechasBloqueadas ?? []}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Hora disponible *</label>
+                  <select
+                    {...registerEdit('hora')}
+                    disabled={horariosEditar.length === 0}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    {horariosEditar.length === 0
+                      ? <option value="">Sin horarios disponibles</option>
+                      : <><option value="">Seleccionar...</option>{horariosEditar.map(h => <option key={h} value={h}>{h}</option>)}</>
+                    }
+                  </select>
+                  {errorsEdit.hora && <p className="text-red-500 text-xs mt-1">{errorsEdit.hora.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Motivo</label>
+                    <input type="text" {...registerEdit('motivo')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Duración (min)</label>
+                    <input type="number" step={15} min={15} {...registerEdit('duracion')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
+                  <textarea rows={2} {...registerEdit('notas')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none" />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={cerrarEditar} className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                  <button type="submit" disabled={actualizarTurno.isPending} className="flex-1 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg transition-colors">
+                    {actualizarTurno.isPending ? 'Guardando...' : 'Reprogramar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Modal nuevo turno ── */}
       {modalAbierto && (
