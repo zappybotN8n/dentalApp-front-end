@@ -3,6 +3,7 @@ import { useTurnos, useCrearTurno, useCambiarEstado, useEliminarTurno } from '..
 import { usePacientes } from '../hooks/usePacientes';
 import { useConfiguracion } from '../hooks/useConfiguracion';
 import { formatFechaInput, ESTADOS_TURNO, generarSlots } from '../utils/fechas';
+import { turnosAPI } from '../services/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { turnoSchema } from '../validations/schemas';
@@ -37,6 +38,7 @@ export default function Turnos() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [fechaModal, setFechaModal]   = useState(hoy);
   const [turnoACancelar, setTurnoACancelar] = useState(null);
+  const [exportando, setExportando] = useState(false);
 
   // ── Datos ──────────────────────────────────────────────────────────
   const { data: turnosResp, isLoading } = useTurnos({
@@ -86,6 +88,23 @@ export default function Turnos() {
   };
 
   const irHoy = () => { setFecha(hoy); setPage(1); };
+
+  const exportarPDF = async () => {
+    setExportando(true);
+    try {
+      const resp = await turnosAPI.exportarPDF(fecha);
+      const url  = URL.createObjectURL(new Blob([resp.data], { type: 'application/pdf' }));
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `agenda-${fecha}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Error al exportar el PDF');
+    } finally {
+      setExportando(false);
+    }
+  };
 
   const labelFecha = dayjs(fecha).isSame(dayjs(), 'day')
     ? 'Hoy — ' + dayjs(fecha).format('D [de] MMMM')
@@ -143,12 +162,22 @@ export default function Turnos() {
             {cancelados  > 0 && ` · ${cancelados} cancelado${cancelados !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button
-          onClick={abrirModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors self-start sm:self-auto"
-        >
-          + Nuevo turno
-        </button>
+        <div className="flex gap-2 self-start sm:self-auto">
+          <button
+            onClick={exportarPDF}
+            disabled={exportando}
+            className="border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+            title="Exportar agenda del día como PDF"
+          >
+            {exportando ? '...' : '⬇ PDF'}
+          </button>
+          <button
+            onClick={abrirModal}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            + Nuevo turno
+          </button>
+        </div>
       </div>
 
       {/* ── Navegación fecha + filtros ── */}
