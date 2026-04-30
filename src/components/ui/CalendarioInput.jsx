@@ -4,7 +4,7 @@ import 'dayjs/locale/es';
 
 const DIAS_CABECERA = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
 
-export default function CalendarioInput({ value, onChange, diasHabilitados = [0,1,2,3,4,5,6] }) {
+export default function CalendarioInput({ value, onChange, diasHabilitados = [0,1,2,3,4,5,6], fechasBloqueadas = [] }) {
   const hoy = dayjs().startOf('day');
   const seleccionado = value ? dayjs(value) : null;
   const [mes, setMes] = useState(seleccionado ?? hoy);
@@ -17,8 +17,14 @@ export default function CalendarioInput({ value, onChange, diasHabilitados = [0,
   for (let i = 0; i < offsetInicio; i++) celdas.push(null);
   for (let d = 1; d <= totalDias; d++) celdas.push(inicioMes.date(d));
 
+  const bloqueadasSet = new Set(
+    fechasBloqueadas.map(f => dayjs(f).format('YYYY-MM-DD'))
+  );
+
   const esBloqueado = (dia) =>
-    dia.isBefore(hoy) || !diasHabilitados.includes(dia.day());
+    dia.isBefore(hoy) ||
+    !diasHabilitados.includes(dia.day()) ||
+    bloqueadasSet.has(dia.format('YYYY-MM-DD'));
 
   const irMesAnterior = () => {
     const anterior = mes.subtract(1, 'month');

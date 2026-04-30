@@ -400,6 +400,7 @@ export default function Turnos() {
                   value={fechaModal}
                   onChange={handleFechaModal}
                   diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
+                  fechasBloqueadas={config?.fechasBloqueadas ?? []}
                 />
                 {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha.message}</p>}
               </div>
