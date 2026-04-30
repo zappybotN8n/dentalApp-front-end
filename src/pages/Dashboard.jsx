@@ -5,6 +5,7 @@ import 'dayjs/locale/es';
 import { turnosAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCambiarEstado } from '../hooks/useTurnos';
+import { usePacientesStats, useCumpleanos } from '../hooks/usePacientes';
 import { ESTADOS_TURNO } from '../utils/fechas';
 import { toast } from 'sonner';
 
@@ -45,7 +46,9 @@ export default function Dashboard() {
   const [vista, setVista] = useState('semana');
   const [semanaBase, setSemanaBase] = useState(() => getLunes(dayjs()));
   const [diaSeleccionado, setDiaSeleccionado] = useState(() => dayjs().startOf('day'));
-  const cambiarEstado = useCambiarEstado();
+  const cambiarEstado  = useCambiarEstado();
+  const { data: stats } = usePacientesStats();
+  const { data: cumpleanos = [] } = useCumpleanos('semana');
 
   const hoy = dayjs().startOf('day');
 
@@ -169,7 +172,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stats ── */}
+      {/* ── Stats de agenda ── */}
       <div className="grid grid-cols-3 gap-3">
         {(vista === 'semana' ? [
           { label: 'Turnos semana', value: totalSemana,    color: 'text-blue-600',   bg: 'bg-blue-50' },
@@ -185,6 +188,49 @@ export default function Dashboard() {
             <p className="text-xs text-gray-500 mt-0.5">{label}</p>
           </div>
         ))}
+      </div>
+
+      {/* ── KPIs financieros del mes + cumpleaños ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 mb-1">Cobrado este mes</p>
+          <p className="text-xl font-bold text-emerald-600">
+            ${(stats?.cobradoMes ?? 0).toLocaleString('es-AR')}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 mb-1">Pendiente de cobro</p>
+          <p className="text-xl font-bold text-orange-500">
+            ${(stats?.pendienteCobro ?? 0).toLocaleString('es-AR')}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 mb-1">Completados / Ausentes (mes)</p>
+          <p className="text-xl font-bold text-gray-700">
+            {stats?.turnosCompletados ?? 0}
+            <span className="text-sm text-gray-400 font-normal"> / {stats?.turnosAusentes ?? 0}</span>
+          </p>
+        </div>
+        {/* Widget cumpleaños */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 mb-1">Cumpleaños esta semana</p>
+          {cumpleanos.length === 0 ? (
+            <p className="text-sm text-gray-400">Sin cumpleaños</p>
+          ) : (
+            <ul className="space-y-1">
+              {cumpleanos.slice(0, 3).map(p => (
+                <li key={p._id} className="text-xs text-gray-700 flex items-center gap-1.5">
+                  <span>🎂</span>
+                  <span className="font-medium">{p.apellido}, {p.nombre}</span>
+                  <span className="text-gray-400">({p.diaCumple}/{p.mesCumple})</span>
+                </li>
+              ))}
+              {cumpleanos.length > 3 && (
+                <li className="text-xs text-gray-400">+{cumpleanos.length - 3} más</li>
+              )}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* ── Vista Semana ── */}
@@ -241,7 +287,10 @@ export default function Dashboard() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono text-gray-500 font-medium">{turno.hora}</span>
+                          <span className="font-mono text-gray-500 font-medium">
+                            {turno.hora}
+                            {turno.duracion && <span className="text-gray-300 font-normal"> {turno.duracion}m</span>}
+                          </span>
                           <Badge estado={turno.estado} />
                         </div>
                         <p className="font-medium text-gray-800 truncate leading-tight">
