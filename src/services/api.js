@@ -65,6 +65,7 @@ export const pacientesAPI = {
   eliminar: (id) => api.delete(`/pacientes/${id}`),
   getCumpleanos: (periodo) => api.get('/pacientes/cumpleanos', { params: { periodo } }),
   getStats: () => api.get('/pacientes/stats'),
+  getPendientes: () => api.get('/pacientes/pendientes'),
 };
 
 // ── Configuracion ─────────────────────────────────────

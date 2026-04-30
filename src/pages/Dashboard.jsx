@@ -6,7 +6,7 @@ import "dayjs/locale/es";
 import { turnosAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCambiarEstado } from "../hooks/useTurnos";
-import { usePacientesStats, useCumpleanos } from "../hooks/usePacientes";
+import { usePacientesStats, useCumpleanos, usePendientesCobro } from "../hooks/usePacientes";
 import { ESTADOS_TURNO } from "../utils/fechas";
 import { toast } from "sonner";
 
@@ -89,9 +89,11 @@ export default function Dashboard() {
   const [diaSeleccionado, setDiaSeleccionado] = useState(() =>
     dayjs().startOf("day"),
   );
+  const [modalPendientes, setModalPendientes] = useState(false);
   const cambiarEstado = useCambiarEstado();
   const { data: stats } = usePacientesStats();
   const { data: cumpleanos = [] } = useCumpleanos("semana");
+  const { data: pendientes = [], isLoading: cargandoPendientes } = usePendientesCobro(modalPendientes);
 
   const hoy = dayjs().startOf("day");
 
@@ -341,9 +343,12 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-0.5">Pendiente de cobro</p>
-            <p className="text-xl font-bold text-orange-500">
+            <button
+              onClick={() => setModalPendientes(true)}
+              className="text-xl font-bold text-orange-500 hover:text-orange-600 hover:underline transition-colors cursor-pointer"
+            >
               ${(stats?.pendienteCobro ?? 0).toLocaleString("es-AR")}
-            </p>
+            </button>
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-0.5">
@@ -531,6 +536,54 @@ export default function Dashboard() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* ── Modal pendientes de cobro ── */}
+      {modalPendientes && (
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Pendientes de cobro</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{pendientes.length} registro{pendientes.length !== 1 ? 's' : ''} sin cobrar</p>
+              </div>
+              <button onClick={() => setModalPendientes(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+
+            {cargandoPendientes ? (
+              <p className="text-sm text-gray-400 text-center py-6">Cargando...</p>
+            ) : pendientes.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">Sin pendientes de cobro</p>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {pendientes.map((p) => (
+                  <div key={`${p.pacienteId}-${p.historialId}`} className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                    <div className="min-w-0">
+                      <Link
+                        to={`/pacientes/${p.pacienteId}`}
+                        onClick={() => setModalPendientes(false)}
+                        className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline transition-colors"
+                      >
+                        {p.nombre}
+                      </Link>
+                      <p className="text-xs text-gray-500 mt-0.5">{p.tratamiento}</p>
+                    </div>
+                    <span className="text-sm font-bold text-orange-500 shrink-0">
+                      ${p.costo.toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+              <p className="text-xs text-gray-400">Total pendiente</p>
+              <p className="text-base font-bold text-orange-500">
+                ${pendientes.reduce((acc, p) => acc + p.costo, 0).toLocaleString('es-AR')}
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
