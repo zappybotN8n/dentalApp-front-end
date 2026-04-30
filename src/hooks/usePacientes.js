@@ -55,3 +55,12 @@ export const useAgregarHistorial = () => {
     onSuccess: (_, { id }) => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] })
   });
 };
+
+export const useActualizarHistorial = () => {
+  const { usuario } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, historialId, data }) => pacientesAPI.actualizarHistorial(id, historialId, data),
+    onSuccess: (_, { id }) => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] })
+  });
+};

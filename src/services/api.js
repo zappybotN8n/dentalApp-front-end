@@ -60,6 +60,7 @@ export const pacientesAPI = {
   crear: (data) => api.post('/pacientes', data),
   actualizar: (id, data) => api.put(`/pacientes/${id}`, data),
   agregarHistorial: (id, data) => api.post(`/pacientes/${id}/historial`, data),
+  actualizarHistorial: (id, historialId, data) => api.put(`/pacientes/${id}/historial/${historialId}`, data),
   eliminar: (id) => api.delete(`/pacientes/${id}`)
 };
 

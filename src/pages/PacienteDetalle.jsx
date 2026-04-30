@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePaciente, useTurnosDePaciente, useAgregarHistorial } from '../hooks/usePacientes';
+import { usePaciente, useTurnosDePaciente, useAgregarHistorial, useActualizarHistorial } from '../hooks/usePacientes';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { historialSchema } from '../validations/schemas';
@@ -16,11 +16,19 @@ export default function PacienteDetalle() {
   const { id } = useParams();
   const [tab, setTab] = useState('info');
   const [modalHistorial, setModalHistorial] = useState(false);
+  const [registroAEditar, setRegistroAEditar] = useState(null);
 
   const { data: paciente, isLoading } = usePaciente(id);
-  const { data: turnos = [] } = useTurnosDePaciente(id);
+  const { data: turnosResp } = useTurnosDePaciente(id);
+  const turnos = Array.isArray(turnosResp) ? turnosResp : (turnosResp?.data ?? []);
   const agregarHistorial = useAgregarHistorial();
+  const actualizarHistorial = useActualizarHistorial();
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(historialSchema),
+  });
+
+  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, formState: { errors: errorsEdit } } = useForm({
     resolver: zodResolver(historialSchema),
   });
 
@@ -32,6 +40,26 @@ export default function PacienteDetalle() {
       setModalHistorial(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al guardar');
+    }
+  };
+
+  const abrirEditar = (registro) => {
+    setRegistroAEditar(registro);
+    resetEdit({
+      tratamiento: registro.tratamiento,
+      notas: registro.notas || '',
+      costo: registro.costo || 0,
+      pagado: registro.pagado || false,
+    });
+  };
+
+  const onSubmitEditar = async (data) => {
+    try {
+      await actualizarHistorial.mutateAsync({ id, historialId: registroAEditar._id, data });
+      toast.success('Registro actualizado');
+      setRegistroAEditar(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error al actualizar');
     }
   };
 
@@ -111,8 +139,15 @@ export default function PacienteDetalle() {
                       <p className="text-sm font-medium text-gray-800 break-words">{h.tratamiento}</p>
                       {h.notas && <p className="text-xs text-gray-500 mt-1 break-words">{h.notas}</p>}
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-gray-400">{formatFechaCorta(h.fecha)}</p>
+                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-400">{formatFechaCorta(h.fecha)}</p>
+                        <button
+                          onClick={() => abrirEditar(h)}
+                          className="text-xs text-blue-500 hover:text-blue-700 transition-colors"
+                          title="Editar registro"
+                        >✏️</button>
+                      </div>
                       {h.costo > 0 && (
                         <div className="flex items-center gap-2 mt-1 justify-end">
                           <span className="text-xs font-medium text-gray-700">${h.costo.toLocaleString('es-AR')}</span>
@@ -154,6 +189,47 @@ export default function PacienteDetalle() {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal editar registro */}
+      {registroAEditar && (
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-gray-800">Editar registro clínico</h3>
+              <button onClick={() => setRegistroAEditar(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <form onSubmit={handleSubmitEdit(onSubmitEditar)} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Tratamiento *</label>
+                <input type="text" {...registerEdit('tratamiento')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                {errorsEdit.tratamiento && <p className="text-red-500 text-xs mt-1">{errorsEdit.tratamiento.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
+                <textarea rows={3} {...registerEdit('notas')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Costo ($)</label>
+                  <input type="number" min={0} step={100} {...registerEdit('costo')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                    <input type="checkbox" {...registerEdit('pagado')} className="rounded" />
+                    Pagado
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setRegistroAEditar(null)} className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg">Cancelar</button>
+                <button type="submit" disabled={actualizarHistorial.isPending} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg transition-colors">
+                  {actualizarHistorial.isPending ? 'Guardando...' : 'Guardar cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
