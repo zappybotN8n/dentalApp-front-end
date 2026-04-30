@@ -190,46 +190,41 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── KPIs financieros del mes + cumpleaños ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 mb-1">Cobrado este mes</p>
-          <p className="text-xl font-bold text-emerald-600">
-            ${(stats?.cobradoMes ?? 0).toLocaleString('es-AR')}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 mb-1">Pendiente de cobro</p>
-          <p className="text-xl font-bold text-orange-500">
-            ${(stats?.pendienteCobro ?? 0).toLocaleString('es-AR')}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 mb-1">Completados / Ausentes (mes)</p>
-          <p className="text-xl font-bold text-gray-700">
-            {stats?.turnosCompletados ?? 0}
-            <span className="text-sm text-gray-400 font-normal"> / {stats?.turnosAusentes ?? 0}</span>
-          </p>
-        </div>
-        {/* Widget cumpleaños */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-400 mb-1">Cumpleaños esta semana</p>
-          {cumpleanos.length === 0 ? (
-            <p className="text-sm text-gray-400">Sin cumpleaños</p>
-          ) : (
-            <ul className="space-y-1">
-              {cumpleanos.slice(0, 3).map(p => (
-                <li key={p._id} className="text-xs text-gray-700 flex items-center gap-1.5">
-                  <span>🎂</span>
-                  <span className="font-medium">{p.apellido}, {p.nombre}</span>
-                  <span className="text-gray-400">({p.diaCumple}/{p.mesCumple})</span>
-                </li>
-              ))}
-              {cumpleanos.length > 3 && (
-                <li className="text-xs text-gray-400">+{cumpleanos.length - 3} más</li>
-              )}
-            </ul>
-          )}
+      {/* ── Resumen del mes ── */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Resumen del mes</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Cobrado</p>
+            <p className="text-xl font-bold text-emerald-600">
+              ${(stats?.cobradoMes ?? 0).toLocaleString('es-AR')}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Pendiente de cobro</p>
+            <p className="text-xl font-bold text-orange-500">
+              ${(stats?.pendienteCobro ?? 0).toLocaleString('es-AR')}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Cumpleaños esta semana</p>
+            {cumpleanos.length === 0 ? (
+              <p className="text-sm text-gray-300">Sin cumpleaños</p>
+            ) : (
+              <ul className="space-y-1 mt-0.5">
+                {cumpleanos.slice(0, 3).map(p => (
+                  <li key={p._id} className="text-xs text-gray-700 flex items-center gap-1.5">
+                    <span>🎂</span>
+                    <span className="font-medium">{p.apellido}, {p.nombre}</span>
+                    <span className="text-gray-400">({p.diaCumple}/{p.mesCumple})</span>
+                  </li>
+                ))}
+                {cumpleanos.length > 3 && (
+                  <li className="text-xs text-gray-400">+{cumpleanos.length - 3} más</li>
+                )}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

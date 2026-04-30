@@ -43,7 +43,7 @@ export const useActualizarPaciente = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }) => pacientesAPI.actualizar(id, data),
-    onSuccess: (_, { id }) => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] })
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id] })
   });
 };
 
