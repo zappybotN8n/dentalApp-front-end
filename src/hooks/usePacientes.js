@@ -52,7 +52,10 @@ export const useAgregarHistorial = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }) => pacientesAPI.agregarHistorial(id, data),
-    onSuccess: (_, { id }) => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] })
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] });
+      qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, 'stats'] });
+    }
   });
 };
 
@@ -61,7 +64,10 @@ export const useActualizarHistorial = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, historialId, data }) => pacientesAPI.actualizarHistorial(id, historialId, data),
-    onSuccess: (_, { id }) => qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] })
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, id] });
+      qc.invalidateQueries({ queryKey: ['pacientes', usuario?._id, 'stats'] });
+    }
   });
 };
 
