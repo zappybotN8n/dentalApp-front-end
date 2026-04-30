@@ -57,11 +57,14 @@ export const turnosAPI = {
 export const pacientesAPI = {
   getAll: (params) => api.get('/pacientes', { params }),
   getById: (id) => api.get(`/pacientes/${id}`),
-  getTurnos: (id) => api.get(`/pacientes/${id}/turnos`),
+  getTurnos: (id, params) => api.get(`/pacientes/${id}/turnos`, { params }),
   crear: (data) => api.post('/pacientes', data),
   actualizar: (id, data) => api.put(`/pacientes/${id}`, data),
   agregarHistorial: (id, data) => api.post(`/pacientes/${id}/historial`, data),
-  eliminar: (id) => api.delete(`/pacientes/${id}`)
+  actualizarHistorial: (id, historialId, data) => api.put(`/pacientes/${id}/historial/${historialId}`, data),
+  eliminar: (id) => api.delete(`/pacientes/${id}`),
+  getCumpleanos: (periodo) => api.get('/pacientes/cumpleanos', { params: { periodo } }),
+  getStats: () => api.get('/pacientes/stats'),
 };
 
 // ── Configuracion ─────────────────────────────────────
