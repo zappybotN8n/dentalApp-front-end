@@ -422,8 +422,19 @@ export default function Dashboard() {
                           <span className="font-mono text-gray-600 font-medium">
                             {turno.hora}
                           </span>
-                          <div className="flex md:justify-end">
+                          <div className="flex items-center gap-1 md:justify-end flex-wrap">
                             <Badge estado={turno.estado} />
+                            {(turno.recordatorioEnviado || turno.recordatorio2hEnviado) && (
+                              <span
+                                title={[
+                                  turno.recordatorioEnviado  ? 'Recordatorio noche enviado' : '',
+                                  turno.recordatorio2hEnviado ? 'Recordatorio 2hs enviado'  : '',
+                                ].filter(Boolean).join(' · ')}
+                                className="text-xs text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full cursor-default"
+                              >
+                                💬 {turno.recordatorioEnviado && turno.recordatorio2hEnviado ? '×2' : '×1'}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <Link
@@ -509,6 +520,17 @@ export default function Dashboard() {
                           {turno.paciente?.apellido}, {turno.paciente?.nombre}
                         </Link>
                         <Badge estado={turno.estado} />
+                        {(turno.recordatorioEnviado || turno.recordatorio2hEnviado) && (
+                          <span
+                            title={[
+                              turno.recordatorioEnviado   ? 'Recordatorio noche enviado' : '',
+                              turno.recordatorio2hEnviado ? 'Recordatorio 2hs enviado'   : '',
+                            ].filter(Boolean).join(' · ')}
+                            className="text-xs text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full cursor-default"
+                          >
+                            💬 {turno.recordatorioEnviado && turno.recordatorio2hEnviado ? '×2' : '×1'}
+                          </span>
+                        )}
                       </div>
                       {turno.paciente?.telefono && (
                         <p className="text-xs text-gray-400">
