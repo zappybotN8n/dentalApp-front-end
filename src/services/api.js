@@ -30,6 +30,8 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   registro: (data) => api.post('/auth/registro', data),
   getMe: () => api.get('/auth/me'),
+  recuperarPassword: (email) => api.post('/auth/recuperar', { email }),
+  nuevaPassword: (token, password) => api.post(`/auth/nueva-password/${token}`, { password }),
 };
 
 // ── Usuarios (superadmin) ─────────────────────────────
