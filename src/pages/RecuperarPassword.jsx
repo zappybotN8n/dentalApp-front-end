@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { recuperarPasswordSchema } from '../validations/schemas';
 import { authAPI } from '../services/api';
+import Logo from '../components/ui/Logo';
 
 export default function RecuperarPassword() {
   const [enviado, setEnviado] = useState(false);
@@ -46,13 +47,7 @@ export default function RecuperarPassword() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">🦷</div>
-          <h1 className="text-xl font-semibold text-gray-800">Recuperar contraseña</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Ingresá tu email y te enviamos un enlace para crear una nueva contraseña.
-          </p>
-        </div>
+        <Logo tagline="Ingresá tu email y te enviamos un enlace para restablecer tu contraseña" />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
