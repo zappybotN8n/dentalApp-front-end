@@ -71,7 +71,9 @@ export const pacientesAPI = {
 // ── Configuracion ─────────────────────────────────────
 export const configuracionAPI = {
   get: () => api.get('/configuracion'),
-  actualizar: (data) => api.put('/configuracion', data)
+  actualizar: (data) => api.put('/configuracion', data),
+  whatsappQR: () => api.get('/configuracion/whatsapp/qr'),
+  whatsappStatus: () => api.get('/configuracion/whatsapp/status'),
 };
 
 
