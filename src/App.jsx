@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
+import RecuperarPassword from './pages/RecuperarPassword';
+import NuevaPassword from './pages/NuevaPassword';
 import Dashboard from './pages/Dashboard';
 import Turnos from './pages/Turnos';
 import Pacientes from './pages/Pacientes';
@@ -51,6 +53,8 @@ export default function App() {
             {/* Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro />} />
+            <Route path="/recuperar" element={<RecuperarPassword />} />
+            <Route path="/nueva-password/:token" element={<NuevaPassword />} />
 
             {/* Rutas superadmin — layout propio, solo gestión de usuarios */}
             <Route path="/" element={<SuperAdminRoute><LayoutSuperAdmin /></SuperAdminRoute>}>

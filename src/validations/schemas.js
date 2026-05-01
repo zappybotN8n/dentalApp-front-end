@@ -37,6 +37,18 @@ export const historialSchema = z.object({
   pagado: z.boolean().optional(),
 });
 
+export const recuperarPasswordSchema = z.object({
+  email: z.string().email('Email inválido'),
+});
+
+export const nuevaPasswordSchema = z.object({
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirmarPassword: z.string(),
+}).refine((d) => d.password === d.confirmarPassword, {
+  message: 'Las contraseñas no coinciden',
+  path: ['confirmarPassword'],
+});
+
 export const registroSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email: z.string().email('Email inválido'),
