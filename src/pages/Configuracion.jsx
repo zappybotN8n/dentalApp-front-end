@@ -116,8 +116,14 @@ function SeccionWhatsApp({ config }) {
     setQr(null);
     try {
       const res = await configuracionAPI.whatsappQR();
-      setQr(res.data.data.qr);
-      setEstado('connecting');
+      const { qr, conectado } = res.data.data;
+      if (conectado) {
+        setEstado('open');
+        toast.success('WhatsApp ya está conectado.');
+      } else {
+        setQr(qr);
+        setEstado('connecting');
+      }
     } catch {
       toast.error('No se pudo obtener el QR. Verificá que Evolution API esté configurada.');
     } finally {
