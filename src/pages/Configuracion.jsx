@@ -4,6 +4,7 @@ import { DIAS_SEMANA, generarSlots } from '../utils/fechas';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
+import { configuracionAPI } from '../services/api';
 
 dayjs.locale('es');
 
@@ -95,6 +96,117 @@ function CalendarioBloqueo({ bloqueadas, onToggle }) {
           <span className="text-xs text-gray-400">Hoy</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SeccionWhatsApp({ config }) {
+  const [qr, setQr] = useState(null);
+  const [estado, setEstado] = useState(null); // null | 'open' | 'close' | 'connecting' | 'sin_configurar'
+  const [cargandoQR, setCargandoQR] = useState(false);
+  const [cargandoStatus, setCargandoStatus] = useState(false);
+
+  // Cargar estado al montar si ya tiene instancia configurada
+  useEffect(() => {
+    if (config?.evolutionInstanceName) verificarEstado();
+  }, [config?.evolutionInstanceName]);
+
+  const generarQR = async () => {
+    setCargandoQR(true);
+    setQr(null);
+    try {
+      const res = await configuracionAPI.whatsappQR();
+      setQr(res.data.data.qr);
+      setEstado('connecting');
+    } catch {
+      toast.error('No se pudo obtener el QR. Verificá que Evolution API esté configurada.');
+    } finally {
+      setCargandoQR(false);
+    }
+  };
+
+  const verificarEstado = async () => {
+    setCargandoStatus(true);
+    try {
+      const res = await configuracionAPI.whatsappStatus();
+      const { state } = res.data.data;
+      setEstado(state);
+      if (state === 'open') {
+        setQr(null);
+        toast.success('WhatsApp conectado correctamente');
+      }
+    } catch {
+      toast.error('No se pudo verificar el estado.');
+    } finally {
+      setCargandoStatus(false);
+    }
+  };
+
+  const estadoInfo = {
+    open:          { label: 'Conectado',      dot: 'bg-green-500',  text: 'text-green-700',  bg: 'bg-green-50 border-green-200' },
+    close:         { label: 'Desconectado',   dot: 'bg-gray-400',   text: 'text-gray-600',   bg: 'bg-gray-50 border-gray-200' },
+    connecting:    { label: 'Conectando...',  dot: 'bg-yellow-400', text: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-200' },
+    sin_configurar:{ label: 'Sin configurar', dot: 'bg-gray-300',   text: 'text-gray-500',   bg: 'bg-gray-50 border-gray-200' },
+  };
+
+  const info = estadoInfo[estado] ?? estadoInfo['sin_configurar'];
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700">WhatsApp — Recordatorios automáticos</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Conectá el WhatsApp del consultorio para enviar recordatorios a tus pacientes.
+          </p>
+        </div>
+        <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${info.bg} ${info.text}`}>
+          <span className={`w-2 h-2 rounded-full ${info.dot} ${estado === 'connecting' ? 'animate-pulse' : ''}`} />
+          {info.label}
+        </span>
+      </div>
+
+      {config?.evolutionInstanceName && (
+        <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+          <span className="text-xs text-gray-400">Instancia:</span>
+          <code className="text-xs font-mono text-gray-700">{config.evolutionInstanceName}</code>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={generarQR}
+          disabled={cargandoQR || estado === 'open'}
+          className="text-sm font-medium px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white transition-colors"
+        >
+          {cargandoQR ? 'Generando...' : estado === 'open' ? 'Ya conectado' : 'Generar QR'}
+        </button>
+        {(config?.evolutionInstanceName || qr) && (
+          <button
+            type="button"
+            onClick={verificarEstado}
+            disabled={cargandoStatus}
+            className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
+          >
+            {cargandoStatus ? 'Verificando...' : 'Verificar conexión'}
+          </button>
+        )}
+      </div>
+
+      {qr && (
+        <div className="flex flex-col items-center gap-3 py-2">
+          <div className="border-2 border-gray-200 rounded-xl p-3 bg-white inline-block">
+            <img src={qr} alt="QR WhatsApp" className="w-52 h-52" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-700">Escaneá este código con WhatsApp</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Abrí WhatsApp → Dispositivos vinculados → Vincular dispositivo
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -296,6 +408,14 @@ export default function Configuracion() {
           {actualizar.isPending ? 'Guardando...' : 'Guardar configuración'}
         </button>
       </form>
+
+      <div className="mt-6">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">WhatsApp</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Conectá el número del consultorio para recordatorios automáticos.</p>
+        </div>
+        <SeccionWhatsApp config={config} />
+      </div>
     </div>
   );
 }
