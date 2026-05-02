@@ -254,9 +254,15 @@
     @apply flex flex-col gap-4;
   }
 
-  /* Grid de pills de hora */
+  /* Pills de hora: scroll horizontal en mobile, grilla 3 col en sm+ */
   .time-pill-grid {
-    @apply grid grid-cols-3 gap-1.5;
+    @apply flex overflow-x-auto gap-1.5 pb-1
+           sm:grid sm:grid-cols-3 sm:overflow-x-visible sm:pb-0;
+  }
+
+  /* En mobile los pills no shrink y tienen ancho mínimo fijo */
+  .time-pill-grid .time-pill {
+    @apply flex-shrink-0 sm:flex-shrink;
   }
 
   /* ─────────────────────────────────────────

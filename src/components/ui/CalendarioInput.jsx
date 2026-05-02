@@ -60,25 +60,25 @@ export default function CalendarioInput({
       </div>
 
       {/* Cabecera días */}
-      <div className="grid grid-cols-7 mb-1">
+      <div className="grid grid-cols-7 mb-0.5">
         {DIAS_CAB.map(d => (
-          <div key={d} className="flex items-center justify-center h-6 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+          <div key={d} className="flex items-center justify-center h-5 sm:h-6 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
             {d}
           </div>
         ))}
       </div>
 
       {/* Grilla de días */}
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className="grid grid-cols-7 gap-y-0">
         {celdas.map((dia, i) => {
-          if (!dia) return <div key={`v-${i}`} className="aspect-square" />;
+          if (!dia) return <div key={`v-${i}`} className="h-7 sm:aspect-square" />;
 
-          const bloqueado     = esBloqueado(dia);
+          const bloqueado      = esBloqueado(dia);
           const esSeleccionado = seleccionado?.isSame(dia, 'day');
           const esHoyDia       = dia.isSame(hoy, 'day');
 
           return (
-            <div key={dia.format('YYYY-MM-DD')} className="flex items-center justify-center aspect-square">
+            <div key={dia.format('YYYY-MM-DD')} className="flex items-center justify-center h-7 sm:aspect-square">
               <button
                 type="button"
                 disabled={bloqueado}
@@ -102,9 +102,9 @@ export default function CalendarioInput({
         })}
       </div>
 
-      {/* Fecha seleccionada */}
+      {/* Fecha seleccionada — solo en sm+ para ahorrar espacio en mobile */}
       {seleccionado && (
-        <div className="mt-2 pt-2 border-t border-gray-100 text-center">
+        <div className="mt-1.5 pt-1.5 border-t border-gray-100 text-center">
           <span className="text-xs text-blue-600 font-medium capitalize">
             {seleccionado.format('dddd D [de] MMMM')}
           </span>
