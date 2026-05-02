@@ -46,9 +46,18 @@ export const DIAS_SEMANA = [
 ];
 
 export const ESTADOS_TURNO = {
-  pendiente:  { label: 'Pendiente',  color: 'bg-yellow-100 text-yellow-800' },
-  confirmado: { label: 'Confirmado', color: 'bg-green-100 text-green-800' },
-  cancelado:  { label: 'Cancelado',  color: 'bg-red-100 text-red-800' },
-  completado: { label: 'Completado', color: 'bg-blue-100 text-blue-800' },
-  ausente:    { label: 'Ausente',    color: 'bg-gray-100 text-gray-600' }
+  pendiente:  { label: 'Pendiente',  color: 'bg-orange-100 text-orange-700' },
+  confirmado: { label: 'Confirmado', color: 'bg-cyan-100   text-cyan-700'   },
+  completado: { label: 'Completado', color: 'bg-green-100  text-green-700'  },
+  cancelado:  { label: 'Cancelado',  color: 'bg-red-100    text-red-600'    },
+  ausente:    { label: 'Ausente',    color: 'bg-gray-100   text-gray-500'   },
+};
+
+/* Borde izquierdo de color para tarjetas de turno */
+export const ESTADO_BORDER_CLS = {
+  pendiente:  'border-l-orange-400',
+  confirmado: 'border-l-cyan-500',
+  completado: 'border-l-green-500',
+  cancelado:  'border-l-gray-300',
+  ausente:    'border-l-gray-300',
 };

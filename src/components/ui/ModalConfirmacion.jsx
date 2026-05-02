@@ -1,15 +1,29 @@
-export default function ModalConfirmacion({ titulo, mensaje, labelConfirmar = 'Confirmar', onConfirmar, onCancelar, cargando = false }) {
+export default function ModalConfirmacion({
+  titulo,
+  mensaje,
+  labelConfirmar = 'Confirmar',
+  onConfirmar,
+  onCancelar,
+  cargando = false,
+}) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-        <h3 className="text-base font-semibold text-gray-800 mb-2">{titulo}</h3>
-        {mensaje && <p className="text-sm text-gray-500 mb-5">{mensaje}</p>}
-        <div className="flex gap-3">
+    <div className="modal-overlay">
+      <div className="modal-box max-w-sm">
+        <div className="modal-header">
+          <h3 className="modal-title">{titulo}</h3>
+          <button onClick={onCancelar} disabled={cargando} className="modal-close">&times;</button>
+        </div>
+        {mensaje && (
+          <div className="px-6 py-4">
+            <p className="text-sm text-gray-500">{mensaje}</p>
+          </div>
+        )}
+        <div className="modal-footer">
           <button
             type="button"
             onClick={onCancelar}
             disabled={cargando}
-            className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="btn btn-md btn-secondary flex-1"
           >
             No, volver
           </button>
@@ -17,7 +31,7 @@ export default function ModalConfirmacion({ titulo, mensaje, labelConfirmar = 'C
             type="button"
             onClick={onConfirmar}
             disabled={cargando}
-            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+            className="btn btn-md btn-danger flex-1"
           >
             {cargando ? 'Procesando...' : labelConfirmar}
           </button>

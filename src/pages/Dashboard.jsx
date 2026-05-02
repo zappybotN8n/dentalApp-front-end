@@ -7,7 +7,7 @@ import { turnosAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCambiarEstado } from "../hooks/useTurnos";
 import { usePacientesStats, useCumpleanos, usePendientesCobro } from "../hooks/usePacientes";
-import { ESTADOS_TURNO } from "../utils/fechas";
+import { ESTADOS_TURNO, ESTADO_BORDER_CLS } from "../utils/fechas";
 import { toast } from "sonner";
 
 dayjs.locale("es");
@@ -21,74 +21,50 @@ const getLunes = (date) => {
 
 const Badge = ({ estado }) => {
   const { label, color } = ESTADOS_TURNO[estado] || {};
-  return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>
-      {label}
-    </span>
-  );
+  return <span className={`badge badge-status ${color}`}>{label}</span>;
 };
 
 const ACCIONES = {
-  pendiente: [
-    {
-      label: "Confirmar",
-      next: "confirmado",
-      cls: "text-blue-600 hover:text-blue-700",
-    },
-  ],
-  confirmado: [
-    {
-      label: "Completar",
-      next: "completado",
-      cls: "text-green-600 hover:text-green-700",
-    },
-  ],
+  pendiente: [{ label: "Confirmar", next: "confirmado", cls: "text-blue-600 hover:text-blue-700 font-semibold" }],
+  confirmado: [{ label: "Completar", next: "completado", cls: "text-green-600 hover:text-green-700 font-semibold" }],
 };
 
 const ACCIONES_FULL = {
   pendiente: [
-    {
-      label: "Confirmar",
-      next: "confirmado",
-      cls: "bg-blue-50 text-blue-700 hover:bg-blue-100",
-    },
-    {
-      label: "Ausente",
-      next: "ausente",
-      cls: "bg-gray-50 text-gray-600 hover:bg-gray-100",
-    },
-    {
-      label: "Cancelar",
-      next: "cancelado",
-      cls: "bg-red-50 text-red-600 hover:bg-red-100",
-    },
+    { label: "Confirmar",  next: "confirmado", cls: "btn btn-sm btn-ghost-blue" },
+    { label: "Ausente",    next: "ausente",    cls: "btn btn-sm btn-ghost-gray" },
+    { label: "Cancelar",   next: "cancelado",  cls: "btn btn-sm btn-ghost-red" },
   ],
   confirmado: [
-    {
-      label: "Completar",
-      next: "completado",
-      cls: "bg-green-50 text-green-700 hover:bg-green-100",
-    },
-    {
-      label: "Ausente",
-      next: "ausente",
-      cls: "bg-gray-50 text-gray-600 hover:bg-gray-100",
-    },
-    {
-      label: "Cancelar",
-      next: "cancelado",
-      cls: "bg-red-50 text-red-600 hover:bg-red-100",
-    },
+    { label: "Completar",  next: "completado", cls: "btn btn-sm btn-ghost-green" },
+    { label: "Ausente",    next: "ausente",    cls: "btn btn-sm btn-ghost-gray" },
+    { label: "Cancelar",   next: "cancelado",  cls: "btn btn-sm btn-ghost-red" },
   ],
 };
 
+const ICON = {
+  calendar: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
+  clock:    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+  check:    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>,
+  badge:    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.59 21 9a12.02 12.02 0 00-.382-3.016z"/></svg>,
+  userx:    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M16 11c1.657 0 3-1.343 3-3s-1.343-3-3-3M3 20c0-2.761 2.686-5 6-5s6 2.239 6 5"/><circle cx="9" cy="7" r="4"/><path d="M17 17l4 4m0-4l-4 4"/></svg>,
+};
+
+const STATS_CONFIG = [
+  { key: "total",      label: "Total",       colorVal: "text-blue-600",   statCls: "stat-blue",   icon: ICON.calendar },
+  { key: "pendiente",  label: "Pendientes",  colorVal: "text-orange-500", statCls: "stat-orange", icon: ICON.clock    },
+  { key: "confirmado", label: "Confirmados", colorVal: "text-cyan-600",   statCls: "stat-cyan",   icon: ICON.check    },
+  { key: "completado", label: "Completados", colorVal: "text-green-600",  statCls: "stat-green",  icon: ICON.badge    },
+  { key: "ausente",    label: "Ausentes",    colorVal: "text-red-500",    statCls: "stat-red",    icon: ICON.userx    },
+];
+
 export default function Dashboard() {
   const { usuario } = useAuth();
-  const [vista, setVista] = useState("semana");
-  const [semanaBase, setSemanaBase] = useState(() => getLunes(dayjs()));
-  const [diaSeleccionado, setDiaSeleccionado] = useState(() =>
-    dayjs().startOf("day"),
+  const [vista, setVista] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 640 ? "dia" : "semana"
   );
+  const [semanaBase, setSemanaBase] = useState(() => getLunes(dayjs()));
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() => dayjs().startOf("day"));
   const [modalPendientes, setModalPendientes] = useState(false);
   const cambiarEstado = useCambiarEstado();
   const { data: stats } = usePacientesStats();
@@ -106,9 +82,7 @@ export default function Dashboard() {
     queries: diasSemana.map((dia) => ({
       queryKey: ["turnos", usuario?._id, { fecha: dia.format("YYYY-MM-DD") }],
       queryFn: () =>
-        turnosAPI
-          .getAll({ fecha: dia.format("YYYY-MM-DD"), limit: 50 })
-          .then((r) => r.data.data || []),
+        turnosAPI.getAll({ fecha: dia.format("YYYY-MM-DD"), limit: 50 }).then((r) => r.data.data || []),
       enabled: !!usuario,
       staleTime: 1000 * 60 * 2,
     })),
@@ -116,50 +90,36 @@ export default function Dashboard() {
 
   const turnosPorDia = diasSemana.map((dia, i) => ({
     dia,
-    turnos: (queries[i].data || []).sort((a, b) =>
-      a.hora.localeCompare(b.hora),
-    ),
+    turnos: (queries[i].data || []).sort((a, b) => a.hora.localeCompare(b.hora)),
     loading: queries[i].isLoading,
   }));
 
-  const diaActualData = turnosPorDia.find((d) =>
-    d.dia.isSame(diaSeleccionado, "day"),
-  );
+  const diaActualData = turnosPorDia.find((d) => d.dia.isSame(diaSeleccionado, "day"));
   const turnosDia = diaActualData?.turnos || [];
 
-  // --- Lógica de contadores mejorada ---
-  const totalSemana = turnosPorDia.reduce((acc, d) => acc + d.turnos.length, 0);
-  const pendientesSem = turnosPorDia.reduce(
-    (acc, d) => acc + d.turnos.filter((t) => t.estado === "pendiente").length,
-    0,
-  );
-  const canceladosSem = turnosPorDia.reduce(
-    (acc, d) => acc + d.turnos.filter((t) => t.estado === "cancelado").length,
-    0,
-  );
-  const confirmadosSem = turnosPorDia.reduce(
-    (acc, d) => acc + d.turnos.filter((t) => t.estado === "confirmado").length,
-    0,
-  );
-  const completadosSem = turnosPorDia.reduce(
-    (acc, d) => acc + d.turnos.filter((t) => t.estado === "completado").length,
-    0,
-  );
-  const ausentesSem = turnosPorDia.reduce(
-    (acc, d) => acc + d.turnos.filter((t) => t.estado === "ausente").length,
-    0,
-  );
+  const contarPorEstado = (lista, estado) => lista.filter((t) => t.estado === estado).length;
 
-  const pendientesDia = turnosDia.filter(
-    (t) => t.estado === "pendiente",
-  ).length;
-  const confirmadosDia = turnosDia.filter(
-    (t) => t.estado === "confirmado",
-  ).length;
-  const completadosDia = turnosDia.filter(
-    (t) => t.estado === "completado",
-  ).length;
-  const ausentesDia = turnosDia.filter((t) => t.estado === "ausente").length;
+  const getStatsValues = (lista) => ({
+    total:      lista.length,
+    pendiente:  lista.filter(t => t.estado === "pendiente").length,
+    confirmado: lista.filter(t => t.estado === "confirmado").length,
+    completado: lista.filter(t => t.estado === "completado").length,
+    ausente:    lista.filter(t => t.estado === "ausente").length,
+  });
+
+  const turnosSemanaFlat = turnosPorDia.flatMap((d) => d.turnos);
+  const statsSemana = getStatsValues(turnosSemanaFlat);
+  const statsDia    = getStatsValues(turnosDia);
+
+  const currentStats = vista === "semana" ? statsSemana : statsDia;
+
+  const statsLabels = {
+    total:      vista === "semana" ? "Total semana" : "Total día",
+    pendiente:  "Pendientes",
+    confirmado: "Confirmados",
+    completado: "Completados",
+    ausente:    "Ausentes",
+  };
 
   const handleEstado = (id, estado) => {
     cambiarEstado.mutate(
@@ -172,25 +132,13 @@ export default function Dashboard() {
   };
 
   const navSemana = (dir) => setSemanaBase((s) => s.add(dir * 7, "day"));
-
   const navDia = (dir) => {
     const nuevo = diaSeleccionado.add(dir, "day");
     setDiaSeleccionado(nuevo);
-    if (!diasSemana.some((d) => d.isSame(nuevo, "day"))) {
-      setSemanaBase(getLunes(nuevo));
-    }
+    if (!diasSemana.some((d) => d.isSame(nuevo, "day"))) setSemanaBase(getLunes(nuevo));
   };
-
-  const irHoy = () => {
-    setSemanaBase(getLunes(hoy));
-    setDiaSeleccionado(hoy);
-  };
-
-  const seleccionarDia = (dia) => {
-    setDiaSeleccionado(dia);
-    setVista("dia");
-  };
-
+  const irHoy = () => { setSemanaBase(getLunes(hoy)); setDiaSeleccionado(hoy); };
+  const seleccionarDia = (dia) => { setDiaSeleccionado(dia); setVista("dia"); };
   const esHoy = (dia) => dia.isSame(hoy, "day");
   const esDiaSeleccionado = (dia) => dia.isSame(diaSeleccionado, "day");
 
@@ -199,267 +147,204 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
+
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800 capitalize">
+          <h2 className="page-title capitalize">
             {vista === "semana" ? labelSemana : labelDia}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="page-subtitle">
             {vista === "semana"
-              ? `${totalSemana} turno${totalSemana !== 1 ? "s" : ""} esta semana`
+              ? `${statsSemana.total} turno${statsSemana.total !== 1 ? "s" : ""} esta semana`
               : `${turnosDia.length} turno${turnosDia.length !== 1 ? "s" : ""} este día`}
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
-            <button
-              onClick={() => (vista === "semana" ? navSemana(-1) : navDia(-1))}
-              className="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded text-sm transition-colors"
-            >
-              ←
-            </button>
-            <button
-              onClick={irHoy}
-              className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            >
-              Hoy
-            </button>
-            <button
-              onClick={() => (vista === "semana" ? navSemana(1) : navDia(1))}
-              className="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded text-sm transition-colors"
-            >
-              →
-            </button>
+          <div className="day-nav">
+            <button onClick={() => (vista === "semana" ? navSemana(-1) : navDia(-1))} className="day-nav-btn">←</button>
+            <button onClick={irHoy} className="day-nav-today">Hoy</button>
+            <button onClick={() => (vista === "semana" ? navSemana(1) : navDia(1))} className="day-nav-btn">→</button>
           </div>
 
-          <div className="flex bg-white border border-gray-200 rounded-lg p-1">
-            <button
-              onClick={() => setVista("semana")}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${vista === "semana" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}
-            >
-              Semana
-            </button>
-            <button
-              onClick={() => setVista("dia")}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${vista === "dia" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}
-            >
-              Día
-            </button>
+          <div className="vista-toggle">
+            <button onClick={() => setVista("semana")} className={`vista-toggle-btn ${vista === "semana" ? "vista-toggle-active" : "vista-toggle-idle"}`}>Semana</button>
+            <button onClick={() => setVista("dia")}    className={`vista-toggle-btn ${vista === "dia"    ? "vista-toggle-active" : "vista-toggle-idle"}`}>Día</button>
           </div>
         </div>
       </div>
 
-      {/* ── Stats de agenda (Grid 5 columnas) ── */}
+      {/* ── Stats de agenda ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        {(vista === "semana"
-          ? [
-              {
-                label: "Total semana",
-                value: totalSemana,
-                color: "text-blue-600",
-                bg: "bg-blue-50",
-              },
-              {
-                label: "Pendientes",
-                value: pendientesSem,
-                color: "text-orange-500",
-                bg: "bg-orange-50",
-              },
-              {
-                label: "Confirmados",
-                value: confirmadosSem,
-                color: "text-cyan-600",
-                bg: "bg-cyan-50",
-              },
-              {
-                label: "Completados",
-                value: completadosSem,
-                color: "text-green-600",
-                bg: "bg-green-50",
-              },
-              {
-                label: "Ausentes",
-                value: ausentesSem,
-                color: "text-red-500",
-                bg: "bg-red-50",
-              },
-            ]
-          : [
-              {
-                label: "Total día",
-                value: turnosDia.length,
-                color: "text-blue-600",
-                bg: "bg-blue-50",
-              },
-              {
-                label: "Por confirmar",
-                value: pendientesDia,
-                color: "text-orange-500",
-                bg: "bg-orange-50",
-              },
-              {
-                label: "Confirmados",
-                value: confirmadosDia,
-                color: "text-cyan-600",
-                bg: "bg-cyan-50",
-              },
-              {
-                label: "Completados",
-                value: completadosDia,
-                color: "text-green-600",
-                bg: "bg-green-50",
-              },
-              {
-                label: "Ausentes",
-                value: ausentesDia,
-                color: "text-red-500",
-                bg: "bg-red-50",
-              },
-            ]
-        ).map(({ label, value, color, bg }) => (
-          <div
-            key={label}
-            className={`bg-white rounded-xl border border-gray-200 p-4 ${bg}`}
-          >
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-xs text-gray-500 mt-0.5 font-medium">{label}</p>
+        {STATS_CONFIG.map(({ key, label, colorVal, statCls, icon }) => (
+          <div key={key} className={`stat-card ${statCls}`}>
+            <div className={`mb-2 ${colorVal} opacity-70`}>{icon}</div>
+            <p className={`stat-value ${colorVal}`}>{currentStats[key]}</p>
+            <p className="stat-label">{statsLabels[key]}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Resumen del mes ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-          Resumen del mes
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <p className="text-xs text-gray-400 mb-0.5">Cobrado</p>
-            <p className="text-xl font-bold text-emerald-600">
-              ${(stats?.cobradoMes ?? 0).toLocaleString("es-AR")}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 mb-0.5">Pendiente de cobro</p>
-            <button
-              onClick={() => setModalPendientes(true)}
-              className="text-xl font-bold text-orange-500 hover:text-orange-600 hover:underline transition-colors cursor-pointer"
-            >
-              ${(stats?.pendienteCobro ?? 0).toLocaleString("es-AR")}
-            </button>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 mb-0.5">
-              Cumpleaños esta semana
-            </p>
-            {cumpleanos.length === 0 ? (
-              <p className="text-sm text-gray-300">Sin cumpleaños</p>
-            ) : (
-              <ul className="space-y-1 mt-0.5">
-                {cumpleanos.slice(0, 3).map((p) => (
-                  <li
-                    key={p._id}
-                    className="text-xs text-gray-700 flex items-center gap-1.5"
-                  >
-                    <span>🎂</span>
-                    <span className="font-medium">
-                      {p.apellido}, {p.nombre}
-                    </span>
-                    <span className="text-gray-400">
-                      ({p.diaCumple}/{p.mesCumple})
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      {/* ── Resumen financiero — 3 mini-cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+        {/* Cobrado */}
+        <div className="stat-card stat-emerald">
+          <p className="section-title mb-2">Cobrado del mes</p>
+          <p className="text-2xl font-bold text-emerald-600 leading-none">
+            ${(stats?.cobradoMes ?? 0).toLocaleString("es-AR")}
+          </p>
+          <p className="text-xs text-gray-400 mt-1.5">Tratamientos pagados</p>
         </div>
+
+        {/* Pendiente de cobro */}
+        <div className="stat-card stat-orange">
+          <p className="section-title mb-2">Pendiente de cobro</p>
+          <button
+            onClick={() => setModalPendientes(true)}
+            className="text-2xl font-bold text-orange-500 hover:text-orange-600 transition-colors leading-none text-left"
+          >
+            ${(stats?.pendienteCobro ?? 0).toLocaleString("es-AR")}
+          </button>
+          <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+            Ver detalle
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </p>
+        </div>
+
+        {/* Cumpleaños */}
+        <div className="stat-card stat-violet">
+          <p className="section-title mb-2">Cumpleaños esta semana</p>
+          {cumpleanos.length === 0 ? (
+            <p className="text-sm text-gray-300 mt-1">Sin cumpleaños</p>
+          ) : (
+            <ul className="space-y-1.5 mt-1">
+              {cumpleanos.slice(0, 3).map((p) => (
+                <li key={p._id} className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                  <span className="text-xs text-gray-700 font-medium truncate">
+                    {p.apellido}, {p.nombre}
+                  </span>
+                  <span className="text-xs text-gray-400 flex-shrink-0">
+                    {p.diaCumple}/{p.mesCumple}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
       </div>
 
-      {/* ── Vista Semana (Cards Responsive) ── */}
+      {/* ── Vista Semana ── */}
       {vista === "semana" && (
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-6 gap-3 min-w-[900px] lg:min-w-0">
+          <div className="grid grid-cols-6 gap-2.5 min-w-[860px] lg:min-w-0">
             {turnosPorDia.map(({ dia, turnos, loading }) => (
               <div
                 key={dia.format("YYYY-MM-DD")}
-                className={`rounded-xl border flex flex-col overflow-hidden transition-all ${esHoy(dia) ? "border-blue-300 bg-blue-50/40" : "border-gray-200 bg-white"}`}
+                className={`rounded-xl border flex flex-col overflow-hidden transition-all ${
+                  esHoy(dia)
+                    ? "border-blue-200 bg-blue-50/30 shadow-sm shadow-blue-100"
+                    : "border-gray-200 bg-white"
+                }`}
               >
+                {/* Cabecera del día */}
                 <button
                   onClick={() => seleccionarDia(dia)}
-                  className={`w-full px-3 py-2 text-left border-b transition-colors ${esHoy(dia) ? "border-blue-200 hover:bg-blue-100/50" : "border-gray-100 hover:bg-gray-50"}`}
+                  className={`w-full px-3 py-2.5 text-left border-b transition-colors ${
+                    esHoy(dia)
+                      ? "border-blue-200 hover:bg-blue-100/40"
+                      : "border-gray-100 hover:bg-gray-50"
+                  }`}
                 >
-                  <p
-                    className={`text-xs font-semibold uppercase tracking-wide ${esHoy(dia) ? "text-blue-600" : "text-gray-500"}`}
-                  >
-                    {dia.format("ddd")}
-                  </p>
-                  <p
-                    className={`text-lg font-bold leading-tight ${esHoy(dia) ? "text-blue-700" : "text-gray-800"}`}
-                  >
-                    {dia.format("D")}
-                  </p>
+                  <div className="flex items-center justify-between gap-1">
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${esHoy(dia) ? "text-blue-500" : "text-gray-400"}`}>
+                      {dia.format("ddd")}
+                    </p>
+                    {esHoy(dia) && (
+                      <span className="pill-today">HOY</span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <p className={`text-xl font-bold leading-tight ${esHoy(dia) ? "text-blue-700" : "text-gray-700"}`}>
+                      {dia.format("D")}
+                    </p>
+                    {turnos.length > 0 && (
+                      <span className={`text-xs font-medium ${esHoy(dia) ? "text-blue-400" : "text-gray-400"}`}>
+                        {turnos.length}t
+                      </span>
+                    )}
+                  </div>
                 </button>
 
-                <div className="flex flex-col gap-2 p-2 flex-1">
+                {/* Turnos del día */}
+                <div className="flex flex-col gap-1.5 p-1.5 flex-1">
                   {loading ? (
-                    <div className="text-xs text-gray-400 text-center py-4">
-                      ...
-                    </div>
+                    <div className="text-xs text-gray-300 text-center py-4">...</div>
                   ) : turnos.length === 0 ? (
-                    <div className="text-xs text-gray-300 text-center py-4">
-                      Sin turnos
-                    </div>
+                    <div className="text-xs text-gray-300 text-center py-5">—</div>
                   ) : (
-                    turnos.map((turno) => (
-                      <div
-                        key={turno._id}
-                        className={`rounded-lg p-2.5 border text-xs space-y-1.5 ${turno.estado === "cancelado" || turno.estado === "ausente" ? "bg-gray-50 border-gray-100 opacity-60" : turno.estado === "completado" ? "bg-green-50 border-green-100" : turno.estado === "confirmado" ? "bg-cyan-50 border-cyan-100" : "bg-white border-gray-200"}`}
-                      >
-                        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                          <span className="font-mono text-gray-600 font-medium">
-                            {turno.hora}
-                          </span>
-                          <div className="flex items-center gap-1 md:justify-end flex-wrap">
-                            <Badge estado={turno.estado} />
-                            {(turno.recordatorioEnviado || turno.recordatorio2hEnviado) && (
-                              <span
-                                title={[
-                                  turno.recordatorioEnviado  ? 'Recordatorio noche enviado' : '',
-                                  turno.recordatorio2hEnviado ? 'Recordatorio 2hs enviado'  : '',
-                                ].filter(Boolean).join(' · ')}
-                                className="text-xs text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full cursor-default"
-                              >
-                                💬 {turno.recordatorioEnviado && turno.recordatorio2hEnviado ? '×2' : '×1'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Link
-                          to={`/pacientes/${turno.paciente?._id}`}
-                          className="font-semibold text-gray-900 leading-tight break-words hover:text-blue-600 hover:underline transition-colors"
+                    turnos.map((turno) => {
+                      const { label: estadoLabel, color: estadoColor } = ESTADOS_TURNO[turno.estado] || {};
+                      return (
+                        <div
+                          key={turno._id}
+                          title={`${turno.hora} · ${turno.paciente?.apellido}, ${turno.paciente?.nombre} · ${estadoLabel}`}
+                          className={`bg-white rounded-lg border border-gray-100 border-l-[3px] p-2 text-xs space-y-1 transition-all overflow-hidden ${
+                            ESTADO_BORDER_CLS[turno.estado] || 'border-l-gray-200'
+                          } ${
+                            turno.estado === "cancelado" || turno.estado === "ausente"
+                              ? "opacity-40"
+                              : ""
+                          }`}
                         >
-                          {turno.paciente?.apellido}, {turno.paciente?.nombre}
-                        </Link>
-                        {ACCIONES[turno.estado] && (
-                          <div className="pt-1 flex flex-wrap gap-1.5 border-t border-gray-100 md:border-none md:pt-0">
-                            {ACCIONES[turno.estado].map(
-                              ({ label, next, cls }) => (
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-mono text-gray-600 font-semibold text-xs flex-shrink-0">
+                              {turno.hora}
+                            </span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <span className={`badge badge-sm badge-status ${estadoColor} hidden sm:inline-flex`}>
+                                {estadoLabel}
+                              </span>
+                              {(turno.recordatorioEnviado || turno.recordatorio2hEnviado) && (
+                                <span
+                                  title={[
+                                    turno.recordatorioEnviado   ? "Recordatorio noche" : "",
+                                    turno.recordatorio2hEnviado ? "Recordatorio 2hs"   : "",
+                                  ].filter(Boolean).join(" · ")}
+                                  className="text-green-500 leading-none flex-shrink-0"
+                                >
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Link
+                            to={`/pacientes/${turno.paciente?._id}`}
+                            className="font-semibold text-gray-800 leading-tight hover:text-blue-600 hover:underline transition-colors block text-sm truncate"
+                          >
+                            {turno.paciente?.apellido}, {turno.paciente?.nombre}
+                          </Link>
+                          {ACCIONES[turno.estado] && (
+                            <div className="pt-1 flex flex-wrap gap-1 border-t border-gray-100">
+                              {ACCIONES[turno.estado].map(({ label, next, cls }) => (
                                 <button
                                   key={next}
                                   onClick={() => handleEstado(turno._id, next)}
-                                  className={`text-xs font-semibold ${cls} transition-colors py-1 md:py-0`}
+                                  className={`text-xs transition-colors ${cls}`}
                                 >
                                   {label}
                                 </button>
-                              ),
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -468,49 +353,54 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Vista Día (Responsive Layout) ── */}
+      {/* ── Vista Día ── */}
       {vista === "dia" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="card overflow-hidden">
+          {/* Tabs días */}
           <div className="flex border-b border-gray-100 overflow-x-auto">
             {diasSemana.map((dia) => (
               <button
                 key={dia.format("YYYY-MM-DD")}
                 onClick={() => setDiaSeleccionado(dia)}
-                className={`flex-1 min-w-[80px] px-3 py-3 text-center transition-colors ${esDiaSeleccionado(dia) ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                className={`day-tab ${esDiaSeleccionado(dia) ? "day-tab-active" : "day-tab-idle"}`}
               >
-                <p className="text-xs font-semibold uppercase">
-                  {dia.format("ddd")}
-                </p>
-                <p
-                  className={`text-lg font-bold leading-tight ${esDiaSeleccionado(dia) ? "text-white" : ""}`}
-                >
+                <p className="text-xs font-semibold uppercase tracking-wide">{dia.format("ddd")}</p>
+                <p className={`text-lg font-bold leading-tight ${esDiaSeleccionado(dia) ? "text-blue-700" : ""}`}>
                   {dia.format("D")}
                 </p>
+                {esHoy(dia) && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mt-0.5" />
+                )}
               </button>
             ))}
           </div>
+
           {diaActualData?.loading ? (
-            <div className="p-8 text-center text-gray-400 text-sm">
-              Cargando...
-            </div>
+            <div className="p-10 text-center text-gray-400 text-sm">Cargando...</div>
           ) : turnosDia.length === 0 ? (
-            <div className="p-12 text-center text-gray-400 text-sm">
-              No hay turnos para este día
+            <div className="p-12 text-center">
+              <p className="text-3xl mb-2">📅</p>
+              <p className="text-gray-400 text-sm">No hay turnos para este día</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-50">
-              {turnosDia.map((turno) => (
+              {turnosDia.map((turno) => {
+                const muted = turno.estado === "cancelado" || turno.estado === "ausente";
+                return (
                 <li
                   key={turno._id}
-                  className={`px-4 py-4 transition-colors ${turno.estado === "cancelado" || turno.estado === "ausente" ? "opacity-50" : "hover:bg-gray-50"}`}
+                  className={`turno-item ${ESTADO_BORDER_CLS[turno.estado] || 'border-l-gray-200'} ${muted ? "turno-item-muted" : "turno-item-active"}`}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-                    <div className="flex items-center gap-2 sm:w-14 sm:flex-col sm:items-start">
-                      <span className="text-sm font-mono font-semibold text-gray-700">
-                        {turno.hora}
-                      </span>
-                      <p className="text-xs text-gray-400">{turno.duracion}m</p>
+                    {/* Hora */}
+                    <div className="flex items-center gap-2 sm:w-16 sm:flex-col sm:items-center">
+                      <span className="text-sm font-mono font-bold text-gray-800">{turno.hora}</span>
+                      <span className="text-xs text-gray-400">{turno.duracion}m</span>
                     </div>
+
+                    <div className="w-px h-10 bg-gray-100 hidden sm:block flex-shrink-0" />
+
+                    {/* Info */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
@@ -523,39 +413,34 @@ export default function Dashboard() {
                         {(turno.recordatorioEnviado || turno.recordatorio2hEnviado) && (
                           <span
                             title={[
-                              turno.recordatorioEnviado   ? 'Recordatorio noche enviado' : '',
-                              turno.recordatorio2hEnviado ? 'Recordatorio 2hs enviado'   : '',
-                            ].filter(Boolean).join(' · ')}
-                            className="text-xs text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full cursor-default"
+                              turno.recordatorioEnviado   ? "Recordatorio noche" : "",
+                              turno.recordatorio2hEnviado ? "Recordatorio 2hs"   : "",
+                            ].filter(Boolean).join(" · ")}
+                            className="badge-reminder"
                           >
-                            💬 {turno.recordatorioEnviado && turno.recordatorio2hEnviado ? '×2' : '×1'}
+                            💬 {turno.recordatorioEnviado && turno.recordatorio2hEnviado ? "×2" : "×1"}
                           </span>
                         )}
                       </div>
                       {turno.paciente?.telefono && (
-                        <p className="text-xs text-gray-400">
-                          📞 {turno.paciente.telefono}
-                        </p>
+                        <p className="text-xs text-gray-400">📞 {turno.paciente.telefono}</p>
                       )}
                     </div>
+
+                    {/* Acciones */}
                     {ACCIONES_FULL[turno.estado] && (
                       <div className="flex flex-wrap gap-1.5 sm:justify-end">
-                        {ACCIONES_FULL[turno.estado].map(
-                          ({ label, next, cls }) => (
-                            <button
-                              key={next}
-                              onClick={() => handleEstado(turno._id, next)}
-                              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${cls}`}
-                            >
-                              {label}
-                            </button>
-                          ),
-                        )}
+                        {ACCIONES_FULL[turno.estado].map(({ label, next, cls }) => (
+                          <button key={next} onClick={() => handleEstado(turno._id, next)} className={cls}>
+                            {label}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>
@@ -563,47 +448,56 @@ export default function Dashboard() {
 
       {/* ── Modal pendientes de cobro ── */}
       {modalPendientes && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
-            <div className="flex items-center justify-between mb-5">
+        <div className="modal-overlay">
+          <div className="modal-box max-w-lg">
+            <div className="modal-header">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">Pendientes de cobro</h3>
-                <p className="text-xs text-gray-400 mt-0.5">{pendientes.length} registro{pendientes.length !== 1 ? 's' : ''} sin cobrar</p>
+                <h3 className="modal-title">Pendientes de cobro</h3>
+                <p className="modal-subtitle">
+                  {pendientes.length} registro{pendientes.length !== 1 ? "s" : ""} sin cobrar
+                </p>
               </div>
-              <button onClick={() => setModalPendientes(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              <button onClick={() => setModalPendientes(false)} className="modal-close">&times;</button>
             </div>
 
-            {cargandoPendientes ? (
-              <p className="text-sm text-gray-400 text-center py-6">Cargando...</p>
-            ) : pendientes.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Sin pendientes de cobro</p>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {pendientes.map((p) => (
-                  <div key={`${p.pacienteId}-${p.historialId}`} className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                    <div className="min-w-0">
-                      <Link
-                        to={`/pacientes/${p.pacienteId}`}
-                        onClick={() => setModalPendientes(false)}
-                        className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline transition-colors"
-                      >
-                        {p.nombre}
-                      </Link>
-                      <p className="text-xs text-gray-500 mt-0.5">{p.tratamiento}</p>
+            <div className="modal-body">
+              {cargandoPendientes ? (
+                <p className="text-sm text-gray-400 text-center py-6">Cargando...</p>
+              ) : pendientes.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">Sin pendientes de cobro</p>
+              ) : (
+                <div className="space-y-2">
+                  {pendientes.map((p) => (
+                    <div key={`${p.pacienteId}-${p.historialId}`} className="modal-list-row">
+                      <div className="min-w-0">
+                        <Link
+                          to={`/pacientes/${p.pacienteId}`}
+                          onClick={() => setModalPendientes(false)}
+                          className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline"
+                        >
+                          {p.nombre}
+                        </Link>
+                        <p className="text-xs text-gray-400 mt-0.5">{p.tratamiento}</p>
+                      </div>
+                      <span className="text-sm font-bold text-orange-500 shrink-0">
+                        ${p.costo.toLocaleString("es-AR")}
+                      </span>
                     </div>
-                    <span className="text-sm font-bold text-orange-500 shrink-0">
-                      ${p.costo.toLocaleString('es-AR')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-              <p className="text-xs text-gray-400">Total pendiente</p>
-              <p className="text-base font-bold text-orange-500">
-                ${pendientes.reduce((acc, p) => acc + p.costo, 0).toLocaleString('es-AR')}
-              </p>
+            <div className="modal-footer justify-between items-center">
+              <div>
+                <p className="text-xs text-gray-400">Total pendiente</p>
+                <p className="text-lg font-bold text-orange-500">
+                  ${pendientes.reduce((acc, p) => acc + p.costo, 0).toLocaleString("es-AR")}
+                </p>
+              </div>
+              <button onClick={() => setModalPendientes(false)} className="btn btn-md btn-secondary">
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

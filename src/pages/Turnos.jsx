@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTurnos, useCrearTurno, useActualizarTurno, useCambiarEstado, useEliminarTurno } from '../hooks/useTurnos';
 import { usePacientes } from '../hooks/usePacientes';
 import { useConfiguracion } from '../hooks/useConfiguracion';
-import { formatFechaInput, ESTADOS_TURNO, generarSlots } from '../utils/fechas';
+import { formatFechaInput, ESTADOS_TURNO, ESTADO_BORDER_CLS, generarSlots } from '../utils/fechas';
 import { turnosAPI } from '../services/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,32 +18,31 @@ dayjs.locale('es');
 
 const Badge = ({ estado }) => {
   const { label, color } = ESTADOS_TURNO[estado] || {};
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>;
+  return <span className={`badge badge-status ${color}`}>{label}</span>;
 };
 
 const ESTADOS_FILTRO = [
-  { value: '',           label: 'Todos' },
-  { value: 'pendiente',  label: 'Pendiente' },
+  { value: '',           label: 'Todos'      },
+  { value: 'pendiente',  label: 'Pendiente'  },
   { value: 'confirmado', label: 'Confirmado' },
   { value: 'completado', label: 'Completado' },
-  { value: 'cancelado',  label: 'Cancelado' },
-  { value: 'ausente',    label: 'Ausente' },
+  { value: 'cancelado',  label: 'Cancelado'  },
+  { value: 'ausente',    label: 'Ausente'    },
 ];
 
 export default function Turnos() {
   const hoy = formatFechaInput(new Date());
-  const [fecha, setFecha]             = useState(hoy);
+  const [fecha, setFecha]               = useState(hoy);
   const [filtroEstado, setFiltroEstado] = useState('');
-  const [busqueda, setBusqueda]       = useState('');
-  const [page, setPage]               = useState(1);
+  const [busqueda, setBusqueda]         = useState('');
+  const [page, setPage]                 = useState(1);
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [fechaModal, setFechaModal]   = useState(hoy);
+  const [fechaModal, setFechaModal]     = useState(hoy);
   const [turnoACancelar, setTurnoACancelar] = useState(null);
   const [turnoAEditar, setTurnoAEditar] = useState(null);
-  const [fechaEditar, setFechaEditar] = useState(hoy);
-  const [exportando, setExportando] = useState(false);
+  const [fechaEditar, setFechaEditar]   = useState(hoy);
+  const [exportando, setExportando]     = useState(false);
 
-  // ── Datos ──────────────────────────────────────────────────────────
   const { data: turnosResp, isLoading } = useTurnos({
     fecha,
     estado: filtroEstado || undefined,
@@ -63,8 +62,8 @@ export default function Turnos() {
   const slotsBloqueados = new Set(
     turnosFechaModal.filter(t => t.estado !== 'cancelado').map(t => t.hora)
   );
-  const esHoyModal  = fechaModal === hoy;
-  const horaActual  = dayjs().format('HH:mm');
+  const esHoyModal = fechaModal === hoy;
+  const horaActual = dayjs().format('HH:mm');
   const horarios = config
     ? generarSlots(config.horarioInicio, config.horarioFin, config.intervalo).filter(slot => {
         if (slotsBloqueados.has(slot)) return false;
@@ -73,21 +72,22 @@ export default function Turnos() {
       })
     : [];
 
-  // ── Mutations ──────────────────────────────────────────────────────
   const crearTurno    = useCrearTurno();
   const actualizarTurno = useActualizarTurno();
   const cambiarEstado = useCambiarEstado();
   const eliminarTurno = useEliminarTurno();
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
     resolver: zodResolver(turnoSchema),
   });
 
-  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, setValue: setValueEdit, formState: { errors: errorsEdit } } = useForm({
+  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, setValue: setValueEdit, watch: watchEdit, formState: { errors: errorsEdit } } = useForm({
     resolver: zodResolver(turnoSchema),
   });
 
-  // ── Navegación de fecha ────────────────────────────────────────────
+  const horaSeleccionada     = watch('hora');
+  const horaEditarSeleccionada = watchEdit('hora');
+
   const navDia = (dir) => {
     const nueva = dayjs(fecha).add(dir, 'day').format('YYYY-MM-DD');
     setFecha(nueva);
@@ -117,7 +117,6 @@ export default function Turnos() {
     ? 'Hoy — ' + dayjs(fecha).format('D [de] MMMM')
     : dayjs(fecha).format('dddd D [de] MMMM YYYY');
 
-  // ── Modal nuevo turno ──────────────────────────────────────────────
   const abrirModal = () => {
     setFechaModal(fecha);
     reset({ fecha, duracion: config?.duracionDefault ?? 30 });
@@ -150,7 +149,7 @@ export default function Turnos() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error al reprogramar turno');
     }
-  };;
+  };
 
   const handleFechaModal = (nuevaFecha) => {
     setFechaModal(nuevaFecha);
@@ -168,18 +167,9 @@ export default function Turnos() {
     }
   };
 
-  const handleEstado = (id, estado, confirmMsg) => {
-    if (confirmMsg) return; // manejado por ModalConfirmacion
-    cambiarEstado.mutate({ id, estado }, {
-      onSuccess: () => toast.success('Estado actualizado'),
-      onError:   () => toast.error('Error al actualizar'),
-    });
-  };
-
-  // ── Resumen del día ────────────────────────────────────────────────
-  const pendientes  = turnos.filter(t => ['pendiente','confirmado'].includes(t.estado)).length;
+  const pendientes  = turnos.filter(t => ['pendiente', 'confirmado'].includes(t.estado)).length;
   const completados = turnos.filter(t => t.estado === 'completado').length;
-  const cancelados  = turnos.filter(t => ['cancelado','ausente'].includes(t.estado)).length;
+  const cancelados  = turnos.filter(t => ['cancelado', 'ausente'].includes(t.estado)).length;
 
   return (
     <div className="p-4 lg:p-6 space-y-4">
@@ -187,8 +177,8 @@ export default function Turnos() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800 capitalize">{labelFecha}</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h2 className="page-title capitalize">{labelFecha}</h2>
+          <p className="page-subtitle">
             {turnos.length} turno{turnos.length !== 1 ? 's' : ''}
             {pendientes  > 0 && ` · ${pendientes} pendiente${pendientes !== 1 ? 's' : ''}`}
             {completados > 0 && ` · ${completados} completado${completados !== 1 ? 's' : ''}`}
@@ -199,36 +189,23 @@ export default function Turnos() {
           <button
             onClick={exportarPDF}
             disabled={exportando}
-            className="border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+            className="btn btn-md btn-secondary"
             title="Exportar agenda del día como PDF"
           >
             {exportando ? '...' : '⬇ PDF'}
           </button>
-          <button
-            onClick={abrirModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-          >
+          <button onClick={abrirModal} className="btn btn-md btn-primary">
             + Nuevo turno
           </button>
         </div>
       </div>
 
-      {/* ── Navegación fecha + filtros ── */}
+      {/* ── Navegación + filtros ── */}
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        {/* Navegación día */}
-        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
-          <button
-            onClick={() => navDia(-1)}
-            className="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded text-sm transition-colors"
-          >←</button>
-          <button
-            onClick={irHoy}
-            className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
-          >Hoy</button>
-          <button
-            onClick={() => navDia(1)}
-            className="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded text-sm transition-colors"
-          >→</button>
+        <div className="day-nav">
+          <button onClick={() => navDia(-1)} className="day-nav-btn">←</button>
+          <button onClick={irHoy}            className="day-nav-today">Hoy</button>
+          <button onClick={() => navDia(1)}  className="day-nav-btn">→</button>
           <div className="w-px h-4 bg-gray-200 mx-1" />
           <input
             type="date"
@@ -238,40 +215,32 @@ export default function Turnos() {
           />
         </div>
 
-        {/* Pills de estado */}
         <div className="flex gap-1.5 flex-wrap">
           {ESTADOS_FILTRO.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => { setFiltroEstado(value); setPage(1); }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border ${
-                filtroEstado === value
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'
-              }`}
+              className={`filter-pill ${filtroEstado === value ? 'filter-pill-active' : 'filter-pill-idle'}`}
             >
               {label}
             </button>
           ))}
         </div>
 
-        {/* Búsqueda */}
         <input
           type="text"
           placeholder="Buscar paciente..."
           value={busqueda}
           onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
-          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-[180px] bg-white"
+          className="input-field max-w-[200px]"
         />
       </div>
 
       {/* ── Lista de turnos ── */}
       {isLoading ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400 text-sm">
-          Cargando...
-        </div>
+        <div className="card p-10 text-center text-gray-400 text-sm">Cargando...</div>
       ) : turnos.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div className="card p-12 text-center">
           <p className="text-4xl mb-3">📅</p>
           <p className="text-gray-500 font-medium text-sm">No hay turnos para este día</p>
           <p className="text-gray-400 text-xs mt-1">
@@ -281,89 +250,76 @@ export default function Turnos() {
       ) : (
         <div className="space-y-2">
           {turnos.map((t) => {
-            const opacidad = ['cancelado','ausente'].includes(t.estado) ? 'opacity-60' : '';
-            const recordatorioNoche = t.recordatorioEnviado;
-            const recordatorio2h    = t.recordatorio2hEnviado;
-
+            const opacidad = ['cancelado', 'ausente'].includes(t.estado) ? 'opacity-60' : '';
             return (
               <div
                 key={t._id}
-                className={`bg-white rounded-xl border border-gray-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 transition-colors hover:border-gray-300 ${opacidad}`}
+                className={`card-interactive px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 border-l-[3px] overflow-hidden ${ESTADO_BORDER_CLS[t.estado] || 'border-l-gray-200'} ${opacidad}`}
               >
-                {/* Hora + duración */}
+                {/* Hora */}
                 <div className="flex-shrink-0 w-16 text-center">
                   <p className="text-base font-mono font-bold text-gray-800">{t.hora}</p>
                   <p className="text-xs text-gray-400">{t.duracion}min</p>
                 </div>
 
-                {/* Separador vertical */}
                 <div className="hidden sm:block w-px h-10 bg-gray-100 flex-shrink-0" />
 
-                {/* Info paciente */}
+                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-gray-800">
                       {t.paciente?.apellido}, {t.paciente?.nombre}
                     </p>
                     <Badge estado={t.estado} />
-                    {/* Indicadores de recordatorio */}
-                    {(recordatorioNoche || recordatorio2h) && (
+                    {(t.recordatorioEnviado || t.recordatorio2hEnviado) && (
                       <span
                         title={[
-                          recordatorioNoche ? 'Recordatorio noche enviado' : '',
-                          recordatorio2h    ? 'Recordatorio 2hs enviado'   : '',
+                          t.recordatorioEnviado   ? 'Recordatorio noche enviado' : '',
+                          t.recordatorio2hEnviado ? 'Recordatorio 2hs enviado'   : '',
                         ].filter(Boolean).join(' · ')}
-                        className="text-xs text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full cursor-default"
+                        className="badge-reminder"
                       >
-                        💬 {recordatorioNoche && recordatorio2h ? '×2' : '×1'}
+                        💬 {t.recordatorioEnviado && t.recordatorio2hEnviado ? '×2' : '×1'}
                       </span>
                     )}
                   </div>
                   <div className="flex gap-3 mt-0.5 flex-wrap">
                     {t.motivo && <p className="text-xs text-gray-500">{t.motivo}</p>}
-                    {t.paciente?.obraSocial && (
-                      <p className="text-xs text-gray-400">{t.paciente.obraSocial}</p>
-                    )}
-                    {t.paciente?.telefono && (
-                      <p className="text-xs text-gray-400">📞 {t.paciente.telefono}</p>
-                    )}
+                    {t.paciente?.obraSocial && <p className="text-xs text-gray-400">{t.paciente.obraSocial}</p>}
+                    {t.paciente?.telefono   && <p className="text-xs text-gray-400">📞 {t.paciente.telefono}</p>}
                   </div>
-                  {t.notas && (
-                    <p className="text-xs text-gray-400 mt-0.5 italic">"{t.notas}"</p>
-                  )}
+                  {t.notas && <p className="text-xs text-gray-400 mt-0.5 italic">"{t.notas}"</p>}
                 </div>
 
                 {/* Acciones */}
                 <div className="flex gap-1.5 flex-shrink-0 flex-wrap sm:justify-end">
-                  {['pendiente','confirmado'].includes(t.estado) && (
-                    <button
-                      onClick={() => abrirEditar(t)}
-                      className="text-xs font-medium px-2.5 py-1 rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors"
-                    >Reprogramar</button>
+                  {['pendiente', 'confirmado'].includes(t.estado) && (
+                    <button onClick={() => abrirEditar(t)} className="btn btn-sm btn-ghost-yellow">
+                      Reprogramar
+                    </button>
                   )}
                   {t.estado === 'pendiente' && (
                     <button
                       onClick={() => cambiarEstado.mutate({ id: t._id, estado: 'confirmado' }, { onSuccess: () => toast.success('Turno confirmado') })}
-                      className="text-xs font-medium px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                      className="btn btn-sm btn-ghost-blue"
                     >Confirmar</button>
                   )}
-                  {['pendiente','confirmado'].includes(t.estado) && (
+                  {['pendiente', 'confirmado'].includes(t.estado) && (
                     <button
                       onClick={() => cambiarEstado.mutate({ id: t._id, estado: 'completado' }, { onSuccess: () => toast.success('Turno completado') })}
-                      className="text-xs font-medium px-2.5 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                      className="btn btn-sm btn-ghost-green"
                     >Completar</button>
                   )}
-                  {['pendiente','confirmado'].includes(t.estado) && (
+                  {['pendiente', 'confirmado'].includes(t.estado) && (
                     <button
                       onClick={() => cambiarEstado.mutate({ id: t._id, estado: 'ausente' }, { onSuccess: () => toast.success('Marcado como ausente') })}
-                      className="text-xs font-medium px-2.5 py-1 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                      className="btn btn-sm btn-ghost-gray"
                     >Ausente</button>
                   )}
-                  {!['cancelado','completado','ausente'].includes(t.estado) && (
-                    <button
-                      onClick={() => setTurnoACancelar(t)}
-                      className="text-xs font-medium px-2.5 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                    >Cancelar</button>
+                  {!['cancelado', 'completado', 'ausente'].includes(t.estado) && (
+                    <button onClick={() => setTurnoACancelar(t)} className="btn btn-sm btn-ghost-red">
+                      Cancelar
+                    </button>
                   )}
                 </div>
               </div>
@@ -375,19 +331,11 @@ export default function Turnos() {
       {/* ── Paginación ── */}
       {pagination && pagination.pages > 1 && (
         <div className="flex items-center justify-between pt-1">
-          <p className="text-xs text-gray-500">{pagination.total} turno{pagination.total !== 1 ? 's' : ''}</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="text-xs px-3 py-1 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 bg-white"
-            >← Anterior</button>
-            <span className="text-xs text-gray-500 px-2 py-1">{page} / {pagination.pages}</span>
-            <button
-              onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
-              disabled={page === pagination.pages}
-              className="text-xs px-3 py-1 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 bg-white"
-            >Siguiente →</button>
+          <p className="text-xs text-gray-400">{pagination.total} turno{pagination.total !== 1 ? 's' : ''}</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="pagination-btn">← Anterior</button>
+            <span className="text-xs text-gray-400">{page} / {pagination.pages}</span>
+            <button onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} disabled={page === pagination.pages} className="pagination-btn">Siguiente →</button>
           </div>
         </div>
       )}
@@ -409,13 +357,13 @@ export default function Turnos() {
         />
       )}
 
-      {/* ── Modal reprogramar turno ── */}
+      {/* ── Modal reprogramar ── */}
       {turnoAEditar && (() => {
-        const turnosFechaEditar = turnosFechaEditarResp?.data ?? [];
+        const turnosFechaEditar    = turnosFechaEditarResp?.data ?? [];
         const slotsBloqueadosEditar = new Set(
           turnosFechaEditar.filter(t => t.estado !== 'cancelado' && t._id !== turnoAEditar._id).map(t => t.hora)
         );
-        const esHoyEditar  = fechaEditar === hoy;
+        const esHoyEditar   = fechaEditar === hoy;
         const horariosEditar = config
           ? generarSlots(config.horarioInicio, config.horarioFin, config.intervalo).filter(slot => {
               if (slotsBloqueadosEditar.has(slot)) return false;
@@ -425,70 +373,82 @@ export default function Turnos() {
           : [];
 
         return (
-          <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-              <div className="flex items-center justify-between mb-5">
+          <div className="modal-overlay">
+            <div className="modal-box max-w-lg">
+              <div className="modal-header">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Reprogramar turno</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <h3 className="modal-title">Reprogramar turno</h3>
+                  <p className="modal-subtitle">
                     {turnoAEditar.paciente?.apellido}, {turnoAEditar.paciente?.nombre}
                   </p>
                 </div>
-                <button onClick={cerrarEditar} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+                <button onClick={cerrarEditar} className="modal-close">&times;</button>
               </div>
 
-              <form onSubmit={handleSubmitEdit(onSubmitEditar)} className="space-y-4">
-                <input type="hidden" {...registerEdit('paciente')} />
-                <input type="hidden" {...registerEdit('fecha')} />
+              <form onSubmit={handleSubmitEdit(onSubmitEditar)}>
+                <div className="modal-body">
+                  <input type="hidden" {...registerEdit('paciente')} />
+                  <input type="hidden" {...registerEdit('fecha')} />
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Nueva fecha</label>
-                  <CalendarioInput
-                    value={fechaEditar}
-                    onChange={(f) => {
-                      setFechaEditar(f);
-                      setValueEdit('fecha', f, { shouldValidate: true });
-                      setValueEdit('hora', '');
-                    }}
-                    diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
-                    fechasBloqueadas={config?.fechasBloqueadas ?? []}
-                  />
-                </div>
+                  <div className="modal-fecha-hora">
+                    <div>
+                      <label className="form-label">Nueva fecha</label>
+                      <CalendarioInput
+                        value={fechaEditar}
+                        onChange={(f) => {
+                          setFechaEditar(f);
+                          setValueEdit('fecha', f, { shouldValidate: true });
+                          setValueEdit('hora', '');
+                        }}
+                        diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
+                        fechasBloqueadas={config?.fechasBloqueadas ?? []}
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Hora disponible *</label>
-                  <select
-                    {...registerEdit('hora')}
-                    disabled={horariosEditar.length === 0}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    {horariosEditar.length === 0
-                      ? <option value="">Sin horarios disponibles</option>
-                      : <><option value="">Seleccionar...</option>{horariosEditar.map(h => <option key={h} value={h}>{h}</option>)}</>
-                    }
-                  </select>
-                  {errorsEdit.hora && <p className="text-red-500 text-xs mt-1">{errorsEdit.hora.message}</p>}
-                </div>
+                    <div className="modal-hora-col">
+                      <div>
+                        <label className="form-label">Hora *</label>
+                        <input type="hidden" {...registerEdit('hora')} />
+                        {horariosEditar.length === 0 ? (
+                          <p className="text-xs text-gray-400 py-2">Sin horarios disponibles para este día</p>
+                        ) : (
+                          <div className="time-pill-grid">
+                            {horariosEditar.map(h => (
+                              <button
+                                key={h}
+                                type="button"
+                                onClick={() => setValueEdit('hora', h, { shouldValidate: true })}
+                                className={`time-pill ${horaEditarSeleccionada === h ? 'time-pill-active' : 'time-pill-idle'}`}
+                              >
+                                {h}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {errorsEdit.hora && <p className="form-error mt-1">{errorsEdit.hora.message}</p>}
+                      </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Motivo</label>
-                    <input type="text" {...registerEdit('motivo')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                      <div>
+                        <label className="form-label">Motivo</label>
+                        <input type="text" {...registerEdit('motivo')} className="input-field" />
+                      </div>
+
+                      <div>
+                        <label className="form-label">Duración (min)</label>
+                        <input type="number" step={15} min={15} {...registerEdit('duracion')} className="input-field" />
+                      </div>
+                    </div>
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Duración (min)</label>
-                    <input type="number" step={15} min={15} {...registerEdit('duracion')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    <label className="form-label">Notas</label>
+                    <textarea rows={2} {...registerEdit('notas')} className="input-field resize-none" />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
-                  <textarea rows={2} {...registerEdit('notas')} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none" />
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={cerrarEditar} className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
-                  <button type="submit" disabled={actualizarTurno.isPending} className="flex-1 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg transition-colors">
+                <div className="modal-footer">
+                  <button type="button" onClick={cerrarEditar} className="btn btn-md btn-secondary flex-1">Cancelar</button>
+                  <button type="submit" disabled={actualizarTurno.isPending} className="btn btn-md btn-warning flex-1">
                     {actualizarTurno.isPending ? 'Guardando...' : 'Reprogramar'}
                   </button>
                 </div>
@@ -500,99 +460,91 @@ export default function Turnos() {
 
       {/* ── Modal nuevo turno ── */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 overflow-y-auto py-8">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-semibold text-gray-800">Nuevo turno</h3>
-              <button onClick={cerrarModal} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        <div className="modal-overlay">
+          <div className="modal-box max-w-lg">
+            <div className="modal-header">
+              <div>
+                <h3 className="modal-title">Nuevo turno</h3>
+                <p className="modal-subtitle">Completá los datos para agendar</p>
+              </div>
+              <button onClick={cerrarModal} className="modal-close">&times;</button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <input type="hidden" {...register('fecha')} />
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="modal-body">
+                <input type="hidden" {...register('fecha')} />
 
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Paciente *</label>
-                <input type="hidden" {...register('paciente')} />
-                <PacienteCombobox
-                  value={undefined}
-                  onChange={(id) => setValue('paciente', id, { shouldValidate: true })}
-                  error={!!errors.paciente}
-                />
-                {errors.paciente && <p className="text-red-500 text-xs mt-1">{errors.paciente.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Fecha
-                  {config && <span className="ml-1 font-normal text-gray-400">— días habilitados según configuración</span>}
-                </label>
-                <CalendarioInput
-                  value={fechaModal}
-                  onChange={handleFechaModal}
-                  diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
-                  fechasBloqueadas={config?.fechasBloqueadas ?? []}
-                />
-                {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Hora disponible *</label>
-                <select
-                  {...register('hora')}
-                  disabled={horarios.length === 0}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-50 disabled:text-gray-400"
-                >
-                  {horarios.length === 0
-                    ? <option value="">Sin horarios disponibles</option>
-                    : <><option value="">Seleccionar...</option>{horarios.map(h => <option key={h} value={h}>{h}</option>)}</>
-                  }
-                </select>
-                {errors.hora && <p className="text-red-500 text-xs mt-1">{errors.hora.message}</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+                {/* Paciente */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Motivo</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Limpieza, Control"
-                    {...register('motivo')}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  <label className="form-label">Paciente *</label>
+                  <input type="hidden" {...register('paciente')} />
+                  <PacienteCombobox
+                    value={undefined}
+                    onChange={(id) => setValue('paciente', id, { shouldValidate: true })}
+                    error={!!errors.paciente}
                   />
+                  {errors.paciente && <p className="form-error">{errors.paciente.message}</p>}
                 </div>
+
+                <div className="modal-fecha-hora">
+                  <div>
+                    <label className="form-label">Fecha</label>
+                    <CalendarioInput
+                      value={fechaModal}
+                      onChange={handleFechaModal}
+                      diasHabilitados={config?.diasAtencion ?? [0,1,2,3,4,5,6]}
+                      fechasBloqueadas={config?.fechasBloqueadas ?? []}
+                    />
+                    {errors.fecha && <p className="form-error mt-1">{errors.fecha.message}</p>}
+                  </div>
+
+                  <div className="modal-hora-col">
+                    <div>
+                      <label className="form-label">Hora *</label>
+                      <input type="hidden" {...register('hora')} />
+                      {horarios.length === 0 ? (
+                        <p className="text-xs text-gray-400 py-2">Sin horarios disponibles para este día</p>
+                      ) : (
+                        <div className="time-pill-grid">
+                          {horarios.map(h => (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => setValue('hora', h, { shouldValidate: true })}
+                              className={`time-pill ${horaSeleccionada === h ? 'time-pill-active' : 'time-pill-idle'}`}
+                            >
+                              {h}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {errors.hora && <p className="form-error mt-1">{errors.hora.message}</p>}
+                    </div>
+
+                    <div>
+                      <label className="form-label">Motivo</label>
+                      <input type="text" placeholder="Ej: Limpieza" {...register('motivo')} className="input-field" />
+                    </div>
+
+                    <div>
+                      <label className="form-label">Duración (min)</label>
+                      <input type="number" step={15} min={15} defaultValue={config?.duracionDefault ?? 30} {...register('duracion')} className="input-field" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notas */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Duración (min)</label>
-                  <input
-                    type="number"
-                    step={15}
-                    min={15}
-                    defaultValue={config?.duracionDefault ?? 30}
-                    {...register('duracion')}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                  />
+                  <label className="form-label">Notas</label>
+                  <textarea rows={2} {...register('notas')} className="input-field resize-none" />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
-                <textarea
-                  rows={2}
-                  {...register('notas')}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={cerrarModal}
-                  className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >Cancelar</button>
-                <button
-                  type="submit"
-                  disabled={crearTurno.isPending}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-lg transition-colors"
-                >{crearTurno.isPending ? 'Guardando...' : 'Guardar turno'}</button>
+              <div className="modal-footer">
+                <button type="button" onClick={cerrarModal} className="btn btn-md btn-secondary flex-1">Cancelar</button>
+                <button type="submit" disabled={crearTurno.isPending} className="btn btn-md btn-primary flex-1">
+                  {crearTurno.isPending ? 'Guardando...' : 'Guardar turno'}
+                </button>
               </div>
             </form>
           </div>
