@@ -385,7 +385,7 @@ export default function Turnos() {
                 <button onClick={cerrarEditar} className="modal-close">&times;</button>
               </div>
 
-              <form onSubmit={handleSubmitEdit(onSubmitEditar)}>
+              <form onSubmit={handleSubmitEdit(onSubmitEditar)} className="modal-form">
                 <div className="modal-body">
                   <input type="hidden" {...registerEdit('paciente')} />
                   <input type="hidden" {...registerEdit('fecha')} />
@@ -470,7 +470,7 @@ export default function Turnos() {
               <button onClick={cerrarModal} className="modal-close">&times;</button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit)} className="modal-form">
               <div className="modal-body">
                 <input type="hidden" {...register('fecha')} />
 

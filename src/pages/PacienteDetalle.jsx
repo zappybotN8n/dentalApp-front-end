@@ -214,7 +214,7 @@ export default function PacienteDetalle() {
               <h3 className="modal-title">Editar registro clínico</h3>
               <button onClick={() => setRegistroAEditar(null)} className="modal-close">&times;</button>
             </div>
-            <form onSubmit={handleSubmitEdit(onSubmitEditar)}>
+            <form onSubmit={handleSubmitEdit(onSubmitEditar)} className="modal-form">
               <div className="modal-body">
                 <div>
                   <label className="form-label">Tratamiento *</label>
@@ -257,7 +257,7 @@ export default function PacienteDetalle() {
               <h3 className="modal-title">Nuevo registro clínico</h3>
               <button onClick={() => setModalHistorial(false)} className="modal-close">&times;</button>
             </div>
-            <form onSubmit={handleSubmit(onSubmitHistorial)}>
+            <form onSubmit={handleSubmit(onSubmitHistorial)} className="modal-form">
               <div className="modal-body">
                 <div>
                   <label className="form-label">Tratamiento *</label>

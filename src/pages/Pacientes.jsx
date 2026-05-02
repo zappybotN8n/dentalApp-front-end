@@ -40,7 +40,7 @@ function ModalPaciente({ paciente, onClose, onCreate, onUpdate, isPending }) {
           <button onClick={onClose} className="modal-close">&times;</button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="modal-form">
           <div className="modal-body">
             <div className="grid grid-cols-2 gap-3">
               {camposFormulario.map(({ name, label, type, hint }) => (

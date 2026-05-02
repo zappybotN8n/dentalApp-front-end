@@ -173,6 +173,11 @@
            w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100;
   }
 
+  /* El form dentro del modal debe participar en el flex para no romper la cadena */
+  .modal-form {
+    @apply flex flex-col flex-1 min-h-0;
+  }
+
   /* min-h-0 es crítico: permite que flex-1 encoja y active overflow-y-auto */
   .modal-body {
     @apply px-5 py-4 overflow-y-auto flex-1 min-h-0 space-y-4;
