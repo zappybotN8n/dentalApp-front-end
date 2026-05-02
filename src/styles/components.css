@@ -145,19 +145,22 @@
 
   /* ─────────────────────────────────────────
      MODALES
+     Mobile: bottom sheet (sube desde abajo)
+     Desktop: centrado con max-w
   ───────────────────────────────────────── */
   .modal-overlay {
-    @apply fixed inset-0 bg-black/40 flex items-start justify-center z-50
-           overflow-y-auto py-6 px-4;
+    @apply fixed inset-0 bg-black/40 z-50
+           flex items-end sm:items-center justify-center;
   }
 
   .modal-box {
-    @apply bg-white rounded-2xl shadow-xl w-full flex flex-col
-           max-h-[calc(100vh-3rem)] my-auto;
+    @apply bg-white shadow-xl w-full flex flex-col overflow-hidden
+           rounded-t-2xl sm:rounded-2xl
+           max-h-[92dvh] sm:max-h-[calc(100vh-3rem)];
   }
 
   .modal-header {
-    @apply flex items-center justify-between px-6 py-4
+    @apply flex items-center justify-between px-5 py-4
            border-b border-gray-100 flex-shrink-0;
   }
 
@@ -170,11 +173,13 @@
            w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100;
   }
 
+  /* min-h-0 es crítico: permite que flex-1 encoja y active overflow-y-auto */
   .modal-body {
-    @apply px-6 py-5 overflow-y-auto flex-1 space-y-4;
+    @apply px-5 py-4 overflow-y-auto flex-1 min-h-0 space-y-4;
   }
+
   .modal-footer {
-    @apply px-6 py-4 border-t border-gray-100 flex-shrink-0 flex gap-3;
+    @apply px-5 py-4 border-t border-gray-100 flex-shrink-0 flex gap-3;
   }
 
   /* ─────────────────────────────────────────
@@ -251,7 +256,7 @@
 
   /* Grid de pills de hora */
   .time-pill-grid {
-    @apply grid grid-cols-3 gap-1.5 max-h-40 sm:max-h-44 overflow-y-auto;
+    @apply grid grid-cols-3 gap-1.5;
   }
 
   /* ─────────────────────────────────────────

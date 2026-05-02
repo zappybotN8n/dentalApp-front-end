@@ -84,7 +84,7 @@ export default function CalendarioInput({
                 disabled={bloqueado}
                 onClick={() => onChange(dia.format('YYYY-MM-DD'))}
                 className={[
-                  'w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium transition-all duration-100',
+                  'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full text-xs font-medium transition-all duration-100',
                   esSeleccionado
                     ? 'bg-blue-600 text-white shadow-sm'
                     : bloqueado
