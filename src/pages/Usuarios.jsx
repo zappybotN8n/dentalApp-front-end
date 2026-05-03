@@ -122,18 +122,18 @@ function ModalSuscripcion({ usuario, onClose, onSaved }) {
             {!exento && (
               <>
                 {/* Inicio de trial */}
-                <div className="config-field-row">
-                  <div>
-                    <p className="config-field-label">Inicio de trial</p>
-                    <p className="config-field-desc">
-                      {usuario.trialInicio ? 'Fecha original de aprobación' : '⚠️ Sin trial — se iniciará en la fecha indicada'}
-                    </p>
+                <div className="py-3 border-b border-gray-50">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-sm text-gray-600">Inicio de trial</p>
+                    <input
+                      type="date"
+                      {...register('trialInicio')}
+                      className="border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+                    />
                   </div>
-                  <input
-                    type="date"
-                    {...register('trialInicio')}
-                    className="config-field-input w-36"
-                  />
+                  <p className="text-xs text-gray-400">
+                    {usuario.trialInicio ? 'Fecha original de aprobación' : '⚠️ Sin trial — se iniciará en la fecha indicada'}
+                  </p>
                 </div>
 
                 {/* Días extra de trial */}
