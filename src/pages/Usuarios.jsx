@@ -24,7 +24,10 @@ const ACCESO_CONFIG = {
   sin_trial: { label: 'Sin trial', cls: 'bg-gray-100 text-gray-500' },
 };
 
-function calcularAcceso(u) {
+function calcularAcceso(u, config) {
+  const diasTrial  = config?.diasTrial  ?? 14;
+  const diasGracia = config?.diasGracia ?? 3;
+
   if (u.exento) return { estadoAcceso: 'exento', diasRestantes: null };
   const ahora = new Date();
   if (u.suscripcionActiva && u.suscripcionVence && new Date(u.suscripcionVence) > ahora) {
@@ -32,13 +35,14 @@ function calcularAcceso(u) {
     return { estadoAcceso: 'suscripto', diasRestantes: dias };
   }
   if (u.trialInicio) {
-    const diasDisp = 14 + (u.diasTrialExtra || 0); // fallback 14 días
+    const diasDisp = diasTrial + (u.diasTrialExtra || 0);
     const vence = new Date(u.trialInicio);
     vence.setDate(vence.getDate() + diasDisp);
     if (ahora <= vence) {
       return { estadoAcceso: 'trial', diasRestantes: Math.ceil((vence - ahora) / (1000 * 60 * 60 * 24)) };
     }
-    const gracia = new Date(vence); gracia.setDate(gracia.getDate() + 3);
+    const gracia = new Date(vence);
+    gracia.setDate(gracia.getDate() + diasGracia);
     if (ahora <= gracia) return { estadoAcceso: 'gracia', diasRestantes: Math.ceil((gracia - ahora) / (1000 * 60 * 60 * 24)) };
     return { estadoAcceso: 'expirado', diasRestantes: 0 };
   }
@@ -172,11 +176,12 @@ function ModalSuscripcion({ usuario, onClose, onSaved }) {
 // ─── Panel de configuración global ──────────────────────────────────────────
 
 function PanelConfigGlobal() {
+  const qc = useQueryClient();
   const { data: config, isLoading } = useConfigGlobal();
   const actualizar = useActualizarConfigGlobal();
   const [form, setForm] = useState(null);
 
-  // Inicializar form cuando llega config
+  // Inicializar form cuando llega config (solo la primera vez)
   if (config && form === null) {
     setForm({
       precioMensual: config.precioMensual,
@@ -190,6 +195,8 @@ function PanelConfigGlobal() {
   const handleGuardar = async () => {
     try {
       await actualizar.mutateAsync(form);
+      // Invalidar usuarios para recalcular badges de acceso con los nuevos días
+      qc.invalidateQueries({ queryKey: ['usuarios'] });
       toast.success('Configuración actualizada');
     } catch {
       toast.error('Error al guardar configuración');
@@ -296,6 +303,9 @@ export default function Usuarios() {
   const [modalEliminar, setModalEliminar] = useState(null);
   const [modalSusc, setModalSusc]         = useState(null);
 
+  // Config global para calcular acceso correctamente en la tabla
+  const { data: configGlobal } = useConfigGlobal();
+
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios', filtroEstado, busqueda],
     queryFn: async () => {
@@ -401,7 +411,7 @@ export default function Usuarios() {
                 </tr>
               ) : (
                 usuarios.map((u) => {
-                  const { estadoAcceso, diasRestantes } = calcularAcceso(u);
+                  const { estadoAcceso, diasRestantes } = calcularAcceso(u, configGlobal);
                   const accesoCfg = ACCESO_CONFIG[estadoAcceso] ?? ACCESO_CONFIG.sin_trial;
 
                   return (
