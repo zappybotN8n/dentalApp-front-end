@@ -51,12 +51,17 @@ function calcularAcceso(u, config) {
 
 // ─── Modal de suscripción ────────────────────────────────────────────────────
 
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+
 function ModalSuscripcion({ usuario, onClose, onSaved }) {
   const qc = useQueryClient();
   const { register, handleSubmit, watch } = useForm({
     defaultValues: {
-      exento:           usuario.exento ?? false,
-      diasTrialExtra:   usuario.diasTrialExtra ?? 0,
+      exento:            usuario.exento            ?? false,
+      diasTrialExtra:    usuario.diasTrialExtra    ?? 0,
+      trialInicio:       usuario.trialInicio
+        ? new Date(usuario.trialInicio).toISOString().slice(0, 10)
+        : hoyISO(),  // default: hoy (para usuarios sin trial aún)
       suscripcionActiva: usuario.suscripcionActiva ?? false,
       suscripcionVence:  usuario.suscripcionVence
         ? new Date(usuario.suscripcionVence).toISOString().slice(0, 10)
@@ -75,13 +80,14 @@ function ModalSuscripcion({ usuario, onClose, onSaved }) {
     onError: (err) => toast.error(err.response?.data?.message || 'Error al guardar'),
   });
 
-  const exento = watch('exento');
+  const exento     = watch('exento');
   const suscActiva = watch('suscripcionActiva');
 
   const onSubmit = (data) => {
     mut.mutate({
       exento:            data.exento,
       diasTrialExtra:    Number(data.diasTrialExtra),
+      trialInicio:       data.trialInicio || null,
       suscripcionActiva: data.suscripcionActiva,
       suscripcionVence:  data.suscripcionVence || null,
     });
@@ -115,6 +121,21 @@ function ModalSuscripcion({ usuario, onClose, onSaved }) {
 
             {!exento && (
               <>
+                {/* Inicio de trial */}
+                <div className="config-field-row">
+                  <div>
+                    <p className="config-field-label">Inicio de trial</p>
+                    <p className="config-field-desc">
+                      {usuario.trialInicio ? 'Fecha original de aprobación' : '⚠️ Sin trial — se iniciará en la fecha indicada'}
+                    </p>
+                  </div>
+                  <input
+                    type="date"
+                    {...register('trialInicio')}
+                    className="config-field-input w-36"
+                  />
+                </div>
+
                 {/* Días extra de trial */}
                 <div className="config-field-row">
                   <div>
