@@ -30,6 +30,7 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   registro: (data) => api.post('/auth/registro', data),
   getMe: () => api.get('/auth/me'),
+  getAcceso: () => api.get('/auth/acceso'),
   recuperarPassword: (email) => api.post('/auth/recuperar', { email }),
   nuevaPassword: (token, password) => api.post(`/auth/nueva-password/${token}`, { password }),
 };
@@ -40,6 +41,14 @@ export const usuariosAPI = {
   cambiarEstado: (id, estado) => api.put(`/usuarios/${id}/estado`, { estado }),
   cambiarRol: (id, rol) => api.put(`/usuarios/${id}/rol`, { rol }),
   eliminar: (id) => api.delete(`/usuarios/${id}`),
+  getSuscripcion: (id) => api.get(`/usuarios/${id}/suscripcion`),
+  gestionarSuscripcion: (id, data) => api.put(`/usuarios/${id}/suscripcion`, data),
+};
+
+// ── Config Global (superadmin) ────────────────────────
+export const configGlobalAPI = {
+  get: () => api.get('/config-global'),
+  actualizar: (data) => api.put('/config-global', data),
 };
 
 // ── Turnos ────────────────────────────────────────────

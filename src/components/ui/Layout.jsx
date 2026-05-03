@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useAcceso } from '../../hooks/useAcceso';
+import BannerTrial from './BannerTrial';
 
 const IconCalendar = () => (
   <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -62,6 +64,12 @@ export default function Layout() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
+  const { estaExpirado, isLoading: cargandoAcceso } = useAcceso();
+
+  // Redirigir si el acceso expiró (esperar a que cargue para no flashear)
+  if (!cargandoAcceso && estaExpirado) {
+    return <Navigate to="/acceso-expirado" replace />;
+  }
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const cerrarSidebar = () => setSidebarAbierto(false);
@@ -162,6 +170,9 @@ export default function Layout() {
             <p className="text-sm font-bold text-gray-800">DentalApp</p>
           </div>
         </header>
+
+        {/* Banner de trial/gracia — visible solo cuando aplica */}
+        <BannerTrial />
 
         <main className="flex-1 overflow-auto">
           <Outlet />
