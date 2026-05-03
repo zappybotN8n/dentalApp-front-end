@@ -218,12 +218,12 @@ export default function PacienteDetalle() {
               <div className="modal-body">
                 <div>
                   <label className="form-label">Tratamiento *</label>
-                  <input type="text" {...registerEdit('tratamiento')} className="input-field" />
+                  <input type="text" {...registerEdit('tratamiento')} className="input-field" maxLength={300} />
                   {errorsEdit.tratamiento && <p className="form-error">{errorsEdit.tratamiento.message}</p>}
                 </div>
                 <div>
                   <label className="form-label">Notas</label>
-                  <textarea rows={3} {...registerEdit('notas')} className="input-field resize-none" />
+                  <textarea rows={3} {...registerEdit('notas')} className="input-field resize-none" maxLength={500} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -266,12 +266,13 @@ export default function PacienteDetalle() {
                     placeholder="Ej: Limpieza, Extracción, Ortodoncia"
                     {...register('tratamiento')}
                     className="input-field"
+                    maxLength={300}
                   />
                   {errors.tratamiento && <p className="form-error">{errors.tratamiento.message}</p>}
                 </div>
                 <div>
                   <label className="form-label">Notas</label>
-                  <textarea rows={3} {...register('notas')} className="input-field resize-none" />
+                  <textarea rows={3} {...register('notas')} className="input-field resize-none" maxLength={500} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>

@@ -7,14 +7,14 @@ import { pacienteSchema } from '../validations/schemas';
 import { toast } from 'sonner';
 
 const camposFormulario = [
-  { name: 'nombre',          label: 'Nombre *',            type: 'text',  col: 1 },
-  { name: 'apellido',        label: 'Apellido *',           type: 'text',  col: 1 },
-  { name: 'dni',             label: 'DNI',                  type: 'text',  col: 1 },
-  { name: 'telefono',        label: 'Teléfono *',           type: 'text',  col: 1, hint: 'ej: 5493815551234' },
-  { name: 'email',           label: 'Email',                type: 'email', col: 1 },
+  { name: 'nombre',          label: 'Nombre *',            type: 'text',  col: 1, maxLength: 60  },
+  { name: 'apellido',        label: 'Apellido *',           type: 'text',  col: 1, maxLength: 60  },
+  { name: 'dni',             label: 'DNI',                  type: 'text',  col: 1, maxLength: 8   },
+  { name: 'telefono',        label: 'Teléfono *',           type: 'text',  col: 1, maxLength: 15, hint: 'ej: 5493815551234' },
+  { name: 'email',           label: 'Email',                type: 'email', col: 1, maxLength: 80  },
   { name: 'fechaNacimiento', label: 'Fecha de nacimiento',  type: 'date',  col: 1 },
-  { name: 'obraSocial',      label: 'Obra social',          type: 'text',  col: 1 },
-  { name: 'numeroAfiliado',  label: 'N° afiliado',          type: 'text',  col: 1 },
+  { name: 'obraSocial',      label: 'Obra social',          type: 'text',  col: 1, maxLength: 80  },
+  { name: 'numeroAfiliado',  label: 'N° afiliado',          type: 'text',  col: 1, maxLength: 30  },
 ];
 
 function ModalPaciente({ paciente, onClose, onCreate, onUpdate, isPending }) {
@@ -43,20 +43,20 @@ function ModalPaciente({ paciente, onClose, onCreate, onUpdate, isPending }) {
         <form onSubmit={handleSubmit(onSubmit)} className="modal-form">
           <div className="modal-body">
             <div className="grid grid-cols-2 gap-3">
-              {camposFormulario.map(({ name, label, type, hint }) => (
+              {camposFormulario.map(({ name, label, type, hint, maxLength }) => (
                 <div key={name}>
                   <label className="form-label">
                     {label}
                     {hint && <span className="text-gray-400 font-normal ml-1">({hint})</span>}
                   </label>
-                  <input type={type} {...register(name)} className="input-field" />
+                  <input type={type} {...register(name)} className="input-field" maxLength={maxLength} />
                   {errors[name] && <p className="form-error">{errors[name].message}</p>}
                 </div>
               ))}
             </div>
             <div>
               <label className="form-label">Notas</label>
-              <textarea rows={2} {...register('notas')} className="input-field resize-none" />
+              <textarea rows={2} {...register('notas')} className="input-field resize-none" maxLength={500} />
             </div>
           </div>
 
@@ -151,6 +151,7 @@ export default function Pacientes() {
         value={search}
         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         className="input-field max-w-md"
+        maxLength={100}
       />
 
       {/* ── Tabla ── */}

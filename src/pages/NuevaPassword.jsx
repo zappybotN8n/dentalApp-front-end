@@ -57,6 +57,7 @@ export default function NuevaPassword() {
                 placeholder="Mínimo 8 caracteres"
                 autoFocus
                 autoComplete="new-password"
+                maxLength={15}
               />
               <button
                 type="button"
@@ -82,6 +83,7 @@ export default function NuevaPassword() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Repetí la contraseña"
                 autoComplete="new-password"
+                maxLength={15}
               />
               <button
                 type="button"
