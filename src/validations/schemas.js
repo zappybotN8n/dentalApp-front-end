@@ -24,7 +24,7 @@ export const pacienteSchema = z.object({
     .optional(),
   email: z
     .string()
-    .max(100, 'Máximo 100 caracteres')
+    .max(80, 'Máximo 80 caracteres')
     .refine((v) => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'Email inválido')
     .optional(),
   fechaNacimiento: z.string().optional(),
@@ -41,12 +41,12 @@ export const historialSchema = z.object({
 });
 
 export const recuperarPasswordSchema = z.object({
-  email: z.string().email('Email inválido').max(100, 'Máximo 100 caracteres'),
+  email: z.string().email('Email inválido').max(80, 'Máximo 80 caracteres'),
 });
 
 export const nuevaPasswordSchema = z.object({
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(100, 'Máximo 100 caracteres'),
-  confirmarPassword: z.string().max(100, 'Máximo 100 caracteres'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(15, 'Máximo 15 caracteres'),
+  confirmarPassword: z.string().max(15, 'Máximo 15 caracteres'),
 }).refine((d) => d.password === d.confirmarPassword, {
   message: 'Las contraseñas no coinciden',
   path: ['confirmarPassword'],
@@ -54,9 +54,9 @@ export const nuevaPasswordSchema = z.object({
 
 export const registroSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(60, 'Máximo 60 caracteres'),
-  email: z.string().email('Email inválido').max(100, 'Máximo 100 caracteres'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(100, 'Máximo 100 caracteres'),
-  confirmarPassword: z.string().max(100, 'Máximo 100 caracteres'),
+  email: z.string().email('Email inválido').max(80, 'Máximo 80 caracteres'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(15, 'Máximo 15 caracteres'),
+  confirmarPassword: z.string().max(15, 'Máximo 15 caracteres'),
 }).refine((d) => d.password === d.confirmarPassword, {
   message: 'Las contraseñas no coinciden',
   path: ['confirmarPassword'],

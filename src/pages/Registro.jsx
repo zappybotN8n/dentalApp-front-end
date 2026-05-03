@@ -89,7 +89,7 @@ export default function Registro() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="juan@ejemplo.com"
               autoComplete="email"
-              maxLength={100}
+              maxLength={80}
             />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
           </div>
@@ -103,7 +103,7 @@ export default function Registro() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Mínimo 8 caracteres"
                 autoComplete="new-password"
-                maxLength={100}
+                maxLength={15}
               />
               <button
                 type="button"
@@ -127,7 +127,7 @@ export default function Registro() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Repetí la contraseña"
                 autoComplete="new-password"
-                maxLength={100}
+                maxLength={15}
               />
               <button
                 type="button"

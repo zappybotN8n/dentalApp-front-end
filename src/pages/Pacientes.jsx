@@ -11,7 +11,7 @@ const camposFormulario = [
   { name: 'apellido',        label: 'Apellido *',           type: 'text',  col: 1, maxLength: 60  },
   { name: 'dni',             label: 'DNI',                  type: 'text',  col: 1, maxLength: 8   },
   { name: 'telefono',        label: 'Teléfono *',           type: 'text',  col: 1, maxLength: 15, hint: 'ej: 5493815551234' },
-  { name: 'email',           label: 'Email',                type: 'email', col: 1, maxLength: 100 },
+  { name: 'email',           label: 'Email',                type: 'email', col: 1, maxLength: 80  },
   { name: 'fechaNacimiento', label: 'Fecha de nacimiento',  type: 'date',  col: 1 },
   { name: 'obraSocial',      label: 'Obra social',          type: 'text',  col: 1, maxLength: 80  },
   { name: 'numeroAfiliado',  label: 'N° afiliado',          type: 'text',  col: 1, maxLength: 30  },

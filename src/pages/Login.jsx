@@ -51,7 +51,7 @@ export default function Login() {
               placeholder="tu@email.com"
               required
               autoComplete="email"
-              maxLength={100}
+              maxLength={80}
             />
           </div>
 
@@ -71,7 +71,7 @@ export default function Login() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                maxLength={100}
+                maxLength={15}
               />
               <button
                 type="button"
