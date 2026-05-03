@@ -14,6 +14,7 @@ import Layout from './components/ui/Layout';
 import LayoutSuperAdmin from './components/ui/LayoutSuperAdmin';
 import Configuracion from './pages/Configuracion';
 import Usuarios from './pages/Usuarios';
+import AccesoExpirado from './pages/AccesoExpirado';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 
 const queryClient = new QueryClient({
@@ -60,6 +61,9 @@ export default function App() {
             <Route path="/" element={<SuperAdminRoute><LayoutSuperAdmin /></SuperAdminRoute>}>
               <Route path="usuarios" element={<Usuarios />} />
             </Route>
+
+            {/* Pantalla de acceso expirado — autenticado pero sin Layout */}
+            <Route path="/acceso-expirado" element={<PrivateRoute><AccesoExpirado /></PrivateRoute>} />
 
             {/* Rutas de consultorio — usuarios normales */}
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
