@@ -233,6 +233,7 @@ export default function Turnos() {
           value={busqueda}
           onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
           className="input-field max-w-[200px]"
+          maxLength={100}
         />
       </div>
 
@@ -430,7 +431,7 @@ export default function Turnos() {
 
                       <div>
                         <label className="form-label">Motivo</label>
-                        <input type="text" {...registerEdit('motivo')} className="input-field" />
+                        <input type="text" {...registerEdit('motivo')} className="input-field" maxLength={200} />
                       </div>
 
                       <div>
@@ -442,7 +443,7 @@ export default function Turnos() {
 
                   <div>
                     <label className="form-label">Notas</label>
-                    <textarea rows={2} {...registerEdit('notas')} className="input-field resize-none" />
+                    <textarea rows={2} {...registerEdit('notas')} className="input-field resize-none" maxLength={500} />
                   </div>
                 </div>
 
@@ -523,7 +524,7 @@ export default function Turnos() {
 
                     <div>
                       <label className="form-label">Motivo</label>
-                      <input type="text" placeholder="Ej: Limpieza" {...register('motivo')} className="input-field" />
+                      <input type="text" placeholder="Ej: Limpieza" {...register('motivo')} className="input-field" maxLength={200} />
                     </div>
 
                     <div>
@@ -536,7 +537,7 @@ export default function Turnos() {
                 {/* Notas */}
                 <div>
                   <label className="form-label">Notas</label>
-                  <textarea rows={2} {...register('notas')} className="input-field resize-none" />
+                  <textarea rows={2} {...register('notas')} className="input-field resize-none" maxLength={500} />
                 </div>
               </div>
 
