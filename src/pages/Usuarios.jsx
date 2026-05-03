@@ -273,7 +273,8 @@ function PanelConfigGlobal() {
               type="number"
               min="0"
               value={form.precioMensual}
-              onChange={(e) => setForm((f) => ({ ...f, precioMensual: Number(e.target.value) }))}
+              onChange={(e) => setForm((f) => ({ ...f, precioMensual: parseInt(e.target.value, 10) || 0 }))}
+              onFocus={(e) => e.target.select()}
               className="config-field-input sm:w-full sm:text-left"
             />
           </div>
@@ -289,7 +290,8 @@ function PanelConfigGlobal() {
               min="1"
               max="365"
               value={form.diasTrial}
-              onChange={(e) => setForm((f) => ({ ...f, diasTrial: Number(e.target.value) }))}
+              onChange={(e) => setForm((f) => ({ ...f, diasTrial: parseInt(e.target.value, 10) || 0 }))}
+              onFocus={(e) => e.target.select()}
               className="config-field-input sm:w-full sm:text-left"
             />
           </div>
@@ -305,7 +307,8 @@ function PanelConfigGlobal() {
               min="0"
               max="30"
               value={form.diasGracia}
-              onChange={(e) => setForm((f) => ({ ...f, diasGracia: Number(e.target.value) }))}
+              onChange={(e) => setForm((f) => ({ ...f, diasGracia: parseInt(e.target.value, 10) || 0 }))}
+              onFocus={(e) => e.target.select()}
               className="config-field-input sm:w-full sm:text-left"
             />
           </div>
